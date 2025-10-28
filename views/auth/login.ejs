@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login | ChatApp</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  </head>
+
+  <body class="bg-[#5E6572] flex justify-center items-center min-h-screen">
+    <form
+      action="/check"
+      method="post"
+      class="bg-[#7D98A1] w-[90%] sm:w-[60%] md:w-[40%] lg:w-[30%] rounded-3xl p-6 flex flex-col justify-center items-center shadow-xl"
+    >
+      <h1 class="text-3xl font-bold text-center mb-8 text-white">
+        Welcome to ChatApp
+      </h1>
+
+      <input
+        class="bg-[#A9B4C2] hover:bg-[#D9D9D9] transition duration-300 ease-in-out text-center font-semibold rounded-3xl w-full h-10 mb-3 focus:outline-none focus:ring-2 focus:ring-blue-400"
+        type="text"
+        name="username"
+        placeholder="Enter Username"
+        required
+      />
+
+      <input
+        class="bg-[#A9B4C2] hover:bg-[#D9D9D9] transition duration-300 ease-in-out text-center font-semibold rounded-3xl w-full h-10 mb-3 focus:outline-none focus:ring-2 focus:ring-blue-400"
+        type="password"
+        name="password"
+        placeholder="Enter Password"
+        required
+      />
+
+      <button
+        class="bg-blue-600 hover:bg-blue-800 transition duration-300 ease-in-out text-white font-bold rounded-3xl w-full h-10 mt-2 shadow-md"
+        type="submit"
+      >
+        Login
+      </button>
+
+      <p class="text-center mt-5 text-white">
+        Don't have an account?
+        <a
+          href="/signup"
+          class="font-bold text-[#D9D9D9] hover:text-white transition duration-300"
+          >Sign Up</a
+        >
+      </p>
+
+      <% if (typeof error !== 'undefined') { %>
+        <p class="text-red-500 text-center mt-4 font-semibold"><%= error %></p>
+      <% } %>
+    </form>
+  </body>
+</html>

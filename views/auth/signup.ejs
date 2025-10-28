@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign Up</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="w-screen h-screen bg-[#5E6572] flex justify-center items-center">
+  <form action="/create" method="POST"
+    class="w-[90%] sm:w-[400px] bg-[#7D98A1] rounded-3xl p-6 flex flex-col items-center shadow-lg">
+    
+    <h1 class="text-3xl font-bold text-white mb-8">Create Account</h1>
+
+    <input type="text" name="username" placeholder="Enter Username"
+      class="w-full bg-[#A9B4C2] text-sm text-center font-semibold rounded-3xl h-10 mb-3 transition duration-300 hover:bg-[#D9D9D9] focus:outline-none" />
+
+    <input type="email" name="email" placeholder="Enter Email"
+      class="w-full bg-[#A9B4C2] text-sm text-center font-semibold rounded-3xl h-10 mb-3 transition duration-300 hover:bg-[#D9D9D9] focus:outline-none" />
+
+    <input type="password" name="password" placeholder="Enter Password"
+      class="w-full bg-[#A9B4C2] text-sm text-center font-semibold rounded-3xl h-10 mb-5 transition duration-300 hover:bg-[#D9D9D9] focus:outline-none" />
+
+    <button type="submit"
+      class="w-full bg-blue-500 text-white font-bold rounded-3xl h-10 mb-3 transition duration-300 hover:bg-blue-800">
+      Sign Up
+    </button>
+
+    <p class="text-white text-sm">
+      Already have an account?
+      <a href="/" class="font-bold hover:text-[#D9D9D9] transition duration-300">Login</a>
+    </p>
+  </form>
+</body>
+
+</html>

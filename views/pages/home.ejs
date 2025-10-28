@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <title>Chat Dashboard</title>
+</head>
+
+<body class="bg-[#5E6572] flex flex-col items-center justify-center p-2 gap-3">
+
+  <!-- Top Bar -->
+  <div class="bg-[#1C2321] w-full rounded-full h-[8vh] flex justify-between items-center p-2 px-4">
+    <div id="logo" class="w-[6vh] h-[6vh] bg-white rounded-full overflow-hidden">
+      <img src="/images/profile_pictures/logo.jpg" alt="Logo" class="object-cover w-full h-full" />
+    </div>
+
+    <div class="flex items-center gap-3">
+      <h1 class="font-bold text-white hover:text-gray-300 cursor-pointer">Login</h1>
+      <a href="/profile" id="profile" class="w-[6vh] h-[6vh] bg-white rounded-full overflow-hidden">
+        <img src="<%= user.profile_picture %>" alt="Profile" class="object-cover w-full h-full" />
+      </a>
+    </div>
+  </div>
+
+  <!-- Main Chat Section -->
+  <div id="chatSection" class="w-full h-[88vh] flex gap-3 mt-3">
+
+    <!-- Left Sidebar: Friends List -->
+    <aside class="bg-[#7D98A1] w-1/4 h-full rounded-3xl flex flex-col p-4">
+      <div class="flex gap-2">
+        <input type="text" placeholder="Search..."
+          class="w-full bg-[#A9B4C2] p-2 rounded-3xl outline-none placeholder-gray-700" />
+        <button class="bg-[#D9D9D9] flex items-center justify-center p-2 rounded-full">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+            class="w-5 h-5 text-gray-700">
+            <circle cx="12" cy="6" r="1.5" />
+            <circle cx="12" cy="12" r="1.5" />
+            <circle cx="12" cy="18" r="1.5" />
+          </svg>
+        </button>
+      </div>
+
+      <div id="userList" class="flex flex-col w-full mt-4 gap-3 overflow-y-auto">
+
+        <% if (user.friends && user.friends.length > 0) { %>
+          <% user.friends.forEach(friend => { %>
+            <div
+              class="flex items-center gap-3 p-3 bg-[#A9B4C2] hover:bg-gray-100 rounded-3xl transition duration-200 cursor-pointer">
+              <div class="w-10 h-10 bg-white rounded-full overflow-hidden">
+                <img src="<%= friend.profile_picture %>" alt="" class="object-cover w-full h-full" />
+              </div>
+              <div class="flex flex-col">
+                <h2 class="font-bold"><%= friend.username %></h2>
+                <p class="text-sm text-gray-700">Last message preview...</p>
+              </div>
+              <div
+                class="rounded-full w-8 h-8 bg-[#D9D9D9] text-black flex items-center justify-center ml-auto text-sm font-semibold">
+                <%= friend.unread_count || 0 %>
+              </div>
+            </div>
+          <% }) %>
+        <% } else { %>
+          <p class="p-4 text-gray-200 text-center">No friends yet.</p>
+        <% } %>
+
+      </div>
+    </aside>
+
+    <!-- Middle: Chat Box -->
+    <main class="bg-[#7D98A1] w-[50%] h-full rounded-3xl flex flex-col relative">
+      <div class="h-[8vh] w-full bg-[#A9B4C2] rounded-t-3xl flex items-center gap-3 p-4">
+        <div class="w-10 h-10 bg-white rounded-full overflow-hidden">
+          <img src="/images/profile_pictures/default.jpg" alt="" class="object-cover w-full h-full" />
+        </div>
+        <div>
+          <h2 class="font-bold">Select a Friend</h2>
+          <p class="text-sm text-gray-700">to start chatting...</p>
+        </div>
+      </div>
+
+      <div class="flex-1 w-[96%] mx-auto py-4 px-4 my-2 rounded-3xl overflow-y-auto">
+        <div class="flex flex-col items-center justify-center h-full">
+          <span class="text-gray-600 text-base opacity-70">Chat coming soon...</span>
+        </div>
+      </div>
+
+      <div
+        class="h-[8vh] w-full bg-[#A9B4C2] rounded-b-3xl flex items-center gap-2 p-4 absolute bottom-0 left-0">
+        <div class="w-8 h-8 bg-white rounded-full"></div>
+        <input type="text" placeholder="Type a message..."
+          class="w-[90%] bg-[#A9B4C2] p-2 rounded-3xl outline-none text-sm placeholder-gray-600" />
+        <button class="bg-[#D9D9D9] flex items-center justify-center p-2 rounded-full">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-gray-700" fill="none"
+            viewBox="0 0 24 24" stroke="currentColor">
+            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+          </svg>
+        </button>
+      </div>
+    </main>
+
+    <!-- Right Sidebar: Chat Bot -->
+    <aside class="bg-[#7D98A1] w-[25%] h-full rounded-3xl flex flex-col relative">
+      <div class="h-[8vh] w-full bg-[#A9B4C2] rounded-t-3xl flex items-center gap-3 p-4">
+        <div class="w-10 h-10 bg-white rounded-full overflow-hidden">
+          <img src="/images/profile_pictures/chatbot.jpg" alt="Chatbot" class="object-cover w-full h-full" />
+        </div>
+        <h2 class="font-bold text-base">Chat Bot</h2>
+      </div>
+
+      <div class="flex-1 w-[95%] mx-auto py-3 px-2 mt-2 mb-2 rounded-2xl overflow-y-auto">
+        <div class="flex flex-col items-center justify-center h-full">
+          <span class="text-gray-600 text-base opacity-70">Chat bot coming soon...</span>
+        </div>
+      </div>
+
+      <div
+        class="h-[8vh] w-full bg-[#A9B4C2] rounded-b-3xl flex items-center gap-2 px-3 py-2 absolute bottom-0 left-0">
+        <div class="w-8 h-8 bg-white rounded-full"></div>
+        <input type="text" placeholder="Type a message..."
+          class="w-[80%] bg-[#A9B4C2] p-2 rounded-3xl outline-none text-sm placeholder-gray-600" />
+        <button class="bg-[#D9D9D9] flex items-center justify-center p-2 rounded-full">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-700" fill="none"
+            viewBox="0 0 24 24" stroke="currentColor">
+            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+          </svg>
+        </button>
+      </div>
+    </aside>
+
+  </div>
+</body>
+
+</html>
