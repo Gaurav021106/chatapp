@@ -11,18 +11,23 @@
     <div class="bg-[#5E6572] flex-col items-center justify-center p-2 gap-3">
 
         <!-- Top navigation bar -->
-        <div class="bg-[#1C2321] w-full rounded-full h-[8vh] flex justify-between items-center p-2">
-            <!-- Logo on the left -->
-            <div id="logo" class="w-[6vh] h-[6vh] p-2 bg-white rounded-full overflow-hidden">
-                <img src="./images/profile_pictures/This is an outline_line style icon representing….jpg" alt="Logo">
+        <div class="bg-gradient-to-r from-[#1C2321] to-[#2C3531] w-full rounded-full h-[8vh] flex justify-between items-center p-2 px-6 shadow-lg">
+            <div class="flex items-center gap-4">
+                <!-- Back to Home button -->
+                <a href="/home" class="w-[6vh] h-[6vh] bg-white rounded-full overflow-hidden flex items-center justify-center hover:scale-105 hover:ring-2 hover:ring-blue-400 transition-all shadow-md">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                </a>
+                <!-- Logo -->
+                <div id="logo" class="w-[6vh] h-[6vh] bg-white rounded-full overflow-hidden ring-2 ring-opacity-50 ring-white shadow-md transform hover:scale-105 transition-transform">
+                    <img src="/images/required/logo.jpg" alt="Logo" class="object-cover w-full h-full" />
+                </div>
+                <h1 class="text-xl font-bold text-white hidden sm:block">Profile</h1>
             </div>
 
-            <!-- Login and profile on the right -->
-            <div class="flex items-center gap-3">
-                <h1 class="font-bold text-white hover:text-gray-300 cursor-pointer">Login</h1>
-                <div id="profile" class="w-[6vh] h-[6vh] bg-white rounded-full overflow-hidden">
-                    <img src="./images/profile_pictures/bae65d1d-11d4-4d7a-b586-91de4a42aec3.jpg" alt="Profile icon">
-                </div>
+            <div class="flex items-center gap-4">
+                <a href="/logout" class="text-white opacity-80 hover:opacity-100 transition-opacity text-sm">Logout</a>
             </div>
         </div>
 
@@ -57,11 +62,16 @@
                     <h3 class="font-bold text-lg mb-2 text-center">Friends (<%= user_info.friends.length %>)</h3>
                     <% if (user_info.friends && user_info.friends.length > 0) { %>
                         <% user_info.friends.forEach(function(friend) { %>
-                            <div class="friend-item p-2 border-b border-gray-300 mt-1 rounded-3xl flex items-center gap-3 hover:bg-gray-100"
-                                 data-username="<%= friend.username.toLowerCase() %>">
-                                <img class="w-8 h-8 rounded-full" src="<%= friend.profile_picture %>" alt="">
-                                <p class="font-bold"><%= friend.username %></p>
-                            </div>
+                            <a href="/home?chat=<%= friend._id %>" class="block">
+                                <div class="friend-item p-2 border-b border-gray-300 mt-1 rounded-3xl flex items-center gap-3 hover:bg-gray-100 transition-colors"
+                                     data-username="<%= friend.username.toLowerCase() %>">
+                                    <img class="w-8 h-8 rounded-full" src="<%= friend.profile_picture %>" alt="">
+                                    <p class="font-bold"><%= friend.username %></p>
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                    </svg>
+                                </div>
+                            </a>
                         <% }); %>
                     <% } else { %>
                         <p class="text-center text-gray-500 mt-4">No friends yet</p>

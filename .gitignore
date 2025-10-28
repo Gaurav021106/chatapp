@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+
+# Environment variables
+.env
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Uploaded files
+public/uploads/
+public/images/profile_pictures/*
+!public/images/profile_pictures/default.jpg
+public/images/group_pictures/*
+!public/images/group_pictures/default.png
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db

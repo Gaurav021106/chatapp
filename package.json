@@ -1,13 +1,20 @@
 {
-  "name": "authentication-and-authorization",
+  "name": "chatapp",
   "version": "1.0.0",
-  "description": "",
+  "description": "A real-time chat application with file sharing and group chat capabilities",
   "main": "app.js",
   "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "chat",
+    "socket.io",
+    "realtime",
+    "file-sharing"
+  ],
+  "author": "Gaurav021106",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
@@ -23,8 +30,8 @@
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.20.0",
     "mongoose": "^8.19.2",
+    "multer": "^2.0.2",
     "nodemon": "^3.1.10",
-    "socket.io": "^4.8.1",
-    "socketio": "^1.0.0"
+    "socket.io": "^4.8.1"
   }
 }

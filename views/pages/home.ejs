@@ -11,35 +11,185 @@
 <body class="bg-[#5E6572] flex flex-col items-center justify-center p-2 gap-3">
 
   <!-- Top Bar -->
-  <div class="bg-[#1C2321] w-full rounded-full h-[8vh] flex justify-between items-center p-2 px-4">
-    <div id="logo" class="w-[6vh] h-[6vh] bg-white rounded-full overflow-hidden">
-      <img src="/images/profile_pictures/logo.jpg" alt="Logo" class="object-cover w-full h-full" />
+  <div class="bg-gradient-to-r from-[#1C2321] to-[#2C3531] w-full rounded-full h-[8vh] flex justify-between items-center p-2 px-6 shadow-lg">
+    <div class="flex items-center gap-3">
+      <div id="logo" class="w-[6vh] h-[6vh] bg-white rounded-full overflow-hidden ring-2 ring-opacity-50 ring-white shadow-md transform hover:scale-105 transition-transform">
+        <img src="/images/required/logo.jpg" alt="Logo" class="object-cover w-full h-full" />
+      </div>
+      <h1 class="text-xl font-bold text-white hidden sm:block">ChatApp</h1>
     </div>
 
-    <div class="flex items-center gap-3">
-      <h1 class="font-bold text-white hover:text-gray-300 cursor-pointer">Login</h1>
-      <a href="/profile" id="profile" class="w-[6vh] h-[6vh] bg-white rounded-full overflow-hidden">
+    <div class="flex items-center gap-4">
+      <button id="assistantBtn" class="w-[6vh] h-[6vh] bg-white rounded-full overflow-hidden flex items-center justify-center hover:scale-105 hover:ring-2 hover:ring-blue-400 transition-all shadow-md">
+        <img src="/images/required/assistant-logo.jpg" alt="Assistant" class="w-4/5 h-4/5 object-contain" />
+      </button>
+      <a href="/profile" id="profile" class="w-[6vh] h-[6vh] bg-white rounded-full overflow-hidden hover:scale-105 hover:ring-2 hover:ring-blue-400 transition-all shadow-md">
         <img src="<%= user.profile_picture %>" alt="Profile" class="object-cover w-full h-full" />
       </a>
+      <a href="/logout" class="text-white opacity-80 hover:opacity-100 transition-opacity text-sm">Logout</a>
     </div>
   </div>
 
   <!-- Main Chat Section -->
-  <div id="chatSection" class="w-full h-[88vh] flex gap-3 mt-3">
+  <div id="chatSection" class="w-full h-[88vh] flex items-stretch gap-3 mt-2">
 
-    <!-- Left Sidebar: Friends List -->
-    <aside class="bg-[#7D98A1] w-1/4 h-full rounded-3xl flex flex-col p-4">
+    <!-- Left Sidebar: Friends List (Fixed width) -->
+    <aside class="bg-gradient-to-b from-[#7D98A1] to-[#8DA9B2] w-[270px] h-full rounded-3xl flex flex-col p-4 flex-shrink-0 shadow-xl">
       <div class="flex gap-2">
-        <input type="text" placeholder="Search..."
-          class="w-full bg-[#A9B4C2] p-2 rounded-3xl outline-none placeholder-gray-700" />
-        <button class="bg-[#D9D9D9] flex items-center justify-center p-2 rounded-full">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-            class="w-5 h-5 text-gray-700">
-            <circle cx="12" cy="6" r="1.5" />
-            <circle cx="12" cy="12" r="1.5" />
-            <circle cx="12" cy="18" r="1.5" />
+        <div class="relative flex-grow">
+          <input type="text" placeholder="Search friends..."
+            class="w-full bg-white/90 p-3 pl-10 rounded-2xl outline-none placeholder-gray-500 shadow-inner focus:ring-2 focus:ring-blue-400 transition-all" />
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
           </svg>
-        </button>
+        </div>
+        <div class="relative">
+          <button id="menuBtn" class="bg-white/90 flex items-center justify-center p-3 rounded-xl hover:bg-white hover:scale-105 transition-all shadow-md">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+              class="w-5 h-5 text-gray-600">
+              <circle cx="12" cy="6" r="1.5" />
+              <circle cx="12" cy="12" r="1.5" />
+              <circle cx="12" cy="18" r="1.5" />
+            </svg>
+          </button>
+          <!-- Dropdown Menu -->
+          <div id="dropdownMenu" class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg hidden z-10">
+            <div class="p-2">
+              <button id="createGroupBtn" class="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/>
+                </svg>
+                Create Group
+              </button>
+              <button id="summarizeChatBtn" class="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/>
+                  <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/>
+                </svg>
+                Summarize Chat
+              </button>
+            </div>
+          </div>
+
+          <!-- Create Group Modal -->
+          <div id="createGroupModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+            <div class="bg-white rounded-xl p-6 w-96">
+              <!-- Modal Header -->
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-xl font-bold">Create New Group</h3>
+                <button id="closeGroupModal" class="text-gray-500 hover:text-gray-700">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <!-- Group Form -->
+              <form id="groupForm" class="space-y-4" enctype="multipart/form-data">
+                <!-- Group Image -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Group Picture</label>
+                  <div class="mt-1 flex items-center gap-4">
+                    <div class="relative w-20 h-20 rounded-full overflow-hidden bg-gray-100">
+                      <img id="groupImagePreview" src="/images/group-default.png" alt="Group" class="w-full h-full object-cover" />
+                    </div>
+                    <div class="flex-1">
+                      <input type="file" id="groupImage" name="groupImage" accept="image/*" class="hidden" />
+                      <button type="button" onclick="document.getElementById('groupImage').click()" 
+                              class="bg-white px-4 py-2 border rounded-md hover:bg-gray-50 w-full text-left text-sm">
+                        Choose image...
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <!-- Group Name -->
+                <div>
+                  <label for="groupName" class="block text-sm font-medium text-gray-700">Group Name</label>
+                  <input type="text" id="groupName" name="groupName" required
+                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                </div>
+
+                <!-- Group Description -->
+                <div>
+                  <label for="groupDescription" class="block text-sm font-medium text-gray-700">Description (Optional)</label>
+                  <textarea id="groupDescription" name="groupDescription" rows="3"
+                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"></textarea>
+                </div>
+
+                <!-- Member Selection -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">Select Members</label>
+                  <div class="max-h-48 overflow-y-auto border rounded-md p-2">
+                    <% user.friends.forEach(friend => { %>
+                      <div class="flex items-center space-x-2 py-2">
+                        <input type="checkbox" id="member<%= friend._id %>" name="members[]" value="<%= friend._id %>"
+                               class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                        <label for="member<%= friend._id %>" class="flex items-center space-x-2">
+                          <img src="<%= friend.profile_picture %>" alt="<%= friend.username %>"
+                               class="w-8 h-8 rounded-full object-cover">
+                          <span class="text-sm"><%= friend.username %></span>
+                        </label>
+                      </div>
+                    <% }); %>
+                  </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="flex justify-end">
+                  <button type="submit"
+                          class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                    Create Group
+                  </button>
+                </div>
+              </form>
+
+              <script>
+                // Handle group image preview
+                document.getElementById('groupImage').addEventListener('change', function(e) {
+                  const file = e.target.files[0];
+                  if (file) {
+                    if (file.size > 5 * 1024 * 1024) {
+                      alert('File size should not exceed 5MB');
+                      this.value = '';
+                      return;
+                    }
+                    if (!file.type.match('image.*')) {
+                      alert('Please select an image file');
+                      this.value = '';
+                      return;
+                    }
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                      document.getElementById('groupImagePreview').src = e.target.result;
+                    }
+                    reader.readAsDataURL(file);
+                  }
+                });
+
+                // Handle group form submission
+                document.getElementById('groupForm').addEventListener('submit', async function(e) {
+                  e.preventDefault();
+                  const formData = new FormData(this);
+                  try {
+                    const response = await fetch('/groups/create', {
+                      method: 'POST',
+                      body: formData
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                      window.location.reload();
+                    } else {
+                      alert(result.message || 'Error creating group');
+                    }
+                  } catch (error) {
+                    console.error('Error:', error);
+                    alert('Error creating group');
+                  }
+                });
+              </script>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div id="userList" class="flex flex-col w-full mt-4 gap-3 overflow-y-auto">
@@ -47,7 +197,7 @@
         <% if (user.friends && user.friends.length > 0) { %>
           <% user.friends.forEach(friend => { %>
             <div data-user-id="<%= friend._id %>"
-                 class="friend-entry flex items-center gap-3 p-3 bg-[#A9B4C2] hover:bg-gray-100 rounded-3xl transition duration-200 cursor-pointer">
+                 class="friend-item friend-entry flex items-center gap-3 p-3 bg-[#A9B4C2] hover:bg-gray-100 rounded-3xl transition duration-200 cursor-pointer">
               <div class="relative">
                 <div class="w-10 h-10 bg-white rounded-full overflow-hidden">
                   <img src="<%= friend.profile_picture %>" alt="" class="object-cover w-full h-full" />
@@ -81,42 +231,354 @@
     </aside>
 
     <!-- Middle: Chat Box -->
-    <main class="bg-[#7D98A1] w-[50%] h-full rounded-3xl flex flex-col relative">
-      <div class="h-[8vh] w-full bg-[#A9B4C2] rounded-t-3xl flex items-center gap-3 p-4">
-        <div class="w-10 h-10 bg-white rounded-full overflow-hidden">
-          <img src="/images/profile_pictures/default.jpg" alt="" class="object-cover w-full h-full" />
+    <!-- Middle Section: Welcome Message or Chat Box -->
+    <div class="flex-1 transition-all duration-300" id="middleSection">
+      <!-- Welcome Message (shown when no chat is selected) -->
+      <main id="welcomeMessage" class="bg-gradient-to-br from-[#7D98A1] to-[#8DA9B2] h-full rounded-3xl flex flex-col items-center justify-center shadow-xl transition-opacity duration-300">
+        <div class="transform hover:scale-105 transition-transform duration-300 overflow-hidden">
+          <img src="/images/required/logo.jpg" alt="Welcome" class="w-40 h-40 mb-6 rounded-full opacity-70" />
         </div>
-        <div>
-          <h2 class="font-bold">Select a Friend</h2>
-          <p class="text-sm text-gray-700">to start chatting...</p>
+        <h2 class="text-3xl font-bold text-white mb-3 text-center">Welcome to ChatApp!</h2>
+        <p class="text-gray-100 text-lg">Select a friend from the list to start chatting</p>
+        <div class="mt-8 flex gap-4">
+          <div class="flex items-center gap-2 bg-white/20 rounded-xl px-4 py-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
+            </svg>
+            <span class="text-white">Create Groups</span>
+          </div>
+          <div class="flex items-center gap-2 bg-white/20 rounded-xl px-4 py-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd" />
+            </svg>
+            <span class="text-white">Chat Instantly</span>
+          </div>
+        </div>
+      </main>
+
+      <!-- Chat Box (hidden initially) -->
+      <main id="chatBox" class="bg-gradient-to-br from-[#7D98A1] to-[#8DA9B2] h-full rounded-3xl flex flex-col hidden shadow-xl transition-opacity duration-300 opacity-0">
+        <!-- Chat Header -->
+        <div id="chatHeader" class="h-[8vh] w-full bg-white/10 backdrop-blur-md rounded-t-3xl flex items-center gap-3 p-4 border-b border-white/10">
+          <div class="w-12 h-12 bg-white rounded-full overflow-hidden ring-2 ring-white/30 shadow-lg">
+            <img id="chatFriendImg" src="/images/profile_pictures/default.jpg" alt="" class="object-cover w-full h-full" />
+          </div>
+          <div class="flex-1">
+            <h2 id="chatFriendName" class="font-bold text-white text-lg">Select a friend to chat</h2>
+            <p id="chatFriendBio" class="text-sm text-gray-200 truncate">No chat selected</p>
+          </div>
+          <div id="chatFriendStatus" class="flex items-center gap-2 bg-white/10 px-3 py-1 rounded-full">
+            <span class="w-3 h-3 rounded-full bg-red-500 shadow-glow"></span>
+            <span class="text-sm text-white/80">Offline</span>
+          </div>
+        </div>
+
+        <!-- Messages Container -->
+        <div id="messagesContainer" class="flex-1 overflow-y-auto py-4 px-6">
+          <div id="messagesInner" class="flex flex-col gap-3 w-full">
+            <div class="flex flex-col items-center justify-center h-full">
+              <span class="text-white/70 text-lg">Select a friend to start chatting</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Message Input -->
+        <div id="composer" class="h-[8vh] w-full bg-white/10 backdrop-blur-md rounded-b-3xl flex items-center gap-3 p-4 border-t border-white/10">
+          <div id="composerAvatar" class="w-10 h-10 bg-white rounded-full overflow-hidden ring-2 ring-white/30 shadow-lg">
+            <img src="<%= user.profile_picture %>" alt="You" class="w-full h-full object-cover" />
+          </div>
+          <div class="flex-1 relative">
+            <div class="flex items-center gap-2">
+              <button id="attachBtn" type="button" class="bg-white/90 flex items-center justify-center p-3 rounded-xl hover:bg-white transition-colors shadow-md" onclick="document.getElementById('fileInput').click()">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                </svg>
+              </button>
+              <div class="flex-1 relative">
+                <input id="messageInput" type="text" placeholder="Type a message..."
+                  class="w-full bg-white/90 p-3 pr-12 rounded-xl outline-none text-gray-700 placeholder-gray-500 shadow-inner focus:ring-2 focus:ring-blue-400 transition-all" />
+                <button id="sendBtn" class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-blue-500 flex items-center justify-center p-2 rounded-lg hover:bg-blue-600 transition-colors shadow-md">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <!-- File input (hidden) -->
+            <input type="file" id="fileInput" class="hidden" />
+            <!-- File preview -->
+            <div id="filePreview" class="hidden absolute bottom-full left-0 w-full bg-white/90 p-3 rounded-xl mb-2 shadow-lg">
+              <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2 truncate">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <span id="fileName" class="truncate text-sm"></span>
+                </div>
+                <button id="removeFile" class="text-red-500 hover:text-red-600">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <style>
+          .shadow-glow {
+            box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
+          }
+          /* Custom Scrollbar */
+          #messagesContainer::-webkit-scrollbar {
+            width: 6px;
+          }
+          #messagesContainer::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+          }
+          #messagesContainer::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+          }
+          #messagesContainer::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+          }
+        </style>
+      </main>
+    </div>
+
+    <!-- Chatbot Section (hidden initially) -->
+    <aside id="chatbotSection" class="bg-gradient-to-br from-[#2C3531] to-[#3B444B] w-[270px] h-full rounded-3xl flex-col hidden flex-shrink-0 shadow-xl">
+      <!-- Chatbot Header -->
+      <div class="h-[8vh] w-full bg-white/5 backdrop-blur-md rounded-t-3xl flex items-center gap-3 p-4 border-b border-white/10">
+        <div class="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl overflow-hidden flex items-center justify-center shadow-lg">
+          <img src="/images/assistant-logo.png" alt="Assistant" class="w-3/4 h-3/4 object-contain" />
+        </div>
+        <div class="flex-1">
+          <h2 class="font-bold text-white text-lg">AI Assistant</h2>
+          <p class="text-sm text-blue-200">Ready to help!</p>
         </div>
       </div>
 
-      <div id="messagesContainer" class="flex-1 w-[96%] mx-auto py-4 px-4 my-2 rounded-3xl overflow-y-auto">
-        <div id="messagesInner" class="flex flex-col gap-3">
-          <div class="flex flex-col items-center justify-center h-full">
-            <span class="text-gray-600 text-base opacity-70">Select a friend to start chatting</span>
+      <!-- Chatbot Messages Container -->
+      <div class="flex-1 overflow-y-auto py-4 px-6" id="chatbotMessagesContainer">
+        <div id="chatbotMessages" class="flex flex-col gap-3">
+          <div class="self-start bg-white/10 p-3 px-4 rounded-2xl max-w-[85%] backdrop-blur-sm shadow-md">
+            <p class="text-white">Hello! I'm your AI assistant. How can I help you today?</p>
           </div>
         </div>
       </div>
 
-      <div id="composer"
-        class="h-[8vh] w-full bg-[#A9B4C2] rounded-b-3xl flex items-center gap-2 p-4 absolute bottom-0 left-0">
-        <div id="composerAvatar" class="w-8 h-8 bg-white rounded-full"></div>
-        <input id="messageInput" type="text" placeholder="Type a message..."
-          class="w-[90%] bg-[#A9B4C2] p-2 rounded-3xl outline-none text-sm placeholder-gray-600" />
-        <button id="sendBtn" class="bg-[#D9D9D9] flex items-center justify-center p-2 rounded-full">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-gray-700" fill="none"
-            viewBox="0 0 24 24" stroke="currentColor">
-            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
-          </svg>
-        </button>
+      <!-- Chatbot Input -->
+      <div class="h-[8vh] w-full bg-white/5 backdrop-blur-md rounded-b-3xl flex items-center gap-3 p-4 border-t border-white/10">
+        <div class="flex-1 relative">
+          <input id="chatbotInput" type="text" placeholder="Ask me anything..."
+            class="w-full bg-white/10 p-3 pr-12 rounded-xl outline-none text-white placeholder-gray-400 shadow-inner focus:ring-2 focus:ring-blue-400/50 transition-all" />
+          <button id="chatbotSendBtn" class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-blue-500 flex items-center justify-center p-2 rounded-lg hover:bg-blue-600 transition-colors shadow-md">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+            </svg>
+          </button>
+        </div>
       </div>
 
+      <style>
+        /* Custom Scrollbar for Chatbot */
+        #chatbotMessagesContainer::-webkit-scrollbar {
+          width: 6px;
+        }
+        #chatbotMessagesContainer::-webkit-scrollbar-track {
+          background: rgba(255, 255, 255, 0.05);
+          border-radius: 3px;
+        }
+        #chatbotMessagesContainer::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 3px;
+        }
+        #chatbotMessagesContainer::-webkit-scrollbar-thumb:hover {
+          background: rgba(255, 255, 255, 0.2);
+        }
+        
+        /* Chatbot Animation */
+        #chatbotSection {
+          transition: all 0.3s ease-in-out;
+        }
+        #chatbotSection.hidden {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+        #chatbotSection:not(.hidden) {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      </style>
+    </aside>
+
   <script src="/socket.io/socket.io.js"></script>
+  <!-- Add Chatbot Toggle Script -->
+  <script>
+    let isChatbotVisible = false;
+    const assistantBtn = document.getElementById('assistantBtn');
+    const chatBox = document.getElementById('chatBox');
+    const welcomeMessage = document.getElementById('welcomeMessage');
+    const chatbotSection = document.getElementById('chatbotSection');
+    
+    // Apply initial styles
+    chatbotSection.style.transition = 'all 0.3s ease-in-out';
+    
+    assistantBtn.addEventListener('click', function() {
+      if (chatbotSection.classList.contains('hidden')) {
+        // Show chatbot
+        chatbotSection.classList.remove('hidden');
+        chatbotSection.style.display = 'flex';
+      } else {
+        // Hide chatbot
+        chatbotSection.classList.add('hidden');
+        chatbotSection.style.display = 'none';
+      }
+    });
+
+    // Handle chatbot input
+    const chatbotInput = document.getElementById('chatbotInput');
+    const chatbotSendBtn = document.getElementById('chatbotSendBtn');
+    const chatbotMessages = document.getElementById('chatbotMessages');
+
+    // Chatbot knowledge base
+    const chatbotResponses = {
+      greetings: {
+        patterns: ['hello', 'hi', 'hey', 'howdy', 'hola'],
+        responses: [
+          "Hello! How can I help you today?",
+          "Hi there! What can I assist you with?",
+          "Hey! I'm here to help!"
+        ]
+      },
+      features: {
+        patterns: ['what can you do', 'help me', 'features', 'capabilities'],
+        responses: [
+          "I can help you with:\n• Finding friends\n• Using the chat features\n• Managing your profile\n• Understanding app features\nJust ask me anything!",
+        ]
+      },
+      profile: {
+        patterns: ['edit profile', 'change picture', 'update profile', 'change bio'],
+        responses: [
+          "To edit your profile:\n1. Click your profile picture in the top bar\n2. Click 'Edit Profile'\n3. Update your info and save!",
+        ]
+      },
+      friends: {
+        patterns: ['add friend', 'friend request', 'remove friend', 'find friend'],
+        responses: [
+          "To manage friends:\n• Send requests from the profile page\n• Accept/decline requests from your profile\n• Chat with friends from the home page",
+        ]
+      },
+      chat: {
+        patterns: ['send message', 'chat', 'message', 'talk'],
+        responses: [
+          "To chat:\n1. Select a friend from the left sidebar\n2. Type your message in the box below\n3. Press Enter or click send!",
+        ]
+      },
+      goodbye: {
+        patterns: ['bye', 'goodbye', 'see you', 'cya'],
+        responses: [
+          "Goodbye! Feel free to ask if you need help later!",
+          "See you later! Have a great time chatting!",
+        ]
+      }
+    };
+
+    // Typing indicator
+    function showTypingIndicator() {
+      const typingDiv = document.createElement('div');
+      typingDiv.id = 'typingIndicator';
+      typingDiv.className = 'self-start bg-gray-100 p-2 rounded-2xl max-w-[80%] flex gap-2';
+      typingDiv.innerHTML = `
+        <span class="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style="animation-delay: 0ms;"></span>
+        <span class="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style="animation-delay: 150ms;"></span>
+        <span class="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style="animation-delay: 300ms;"></span>
+      `;
+      chatbotMessages.appendChild(typingDiv);
+      chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+    }
+
+    function removeTypingIndicator() {
+      const indicator = document.getElementById('typingIndicator');
+      if (indicator) indicator.remove();
+    }
+
+      addChatbotMessage(message, isUser = false) {
+      const msgDiv = document.createElement('div');
+      msgDiv.className = isUser 
+        ? 'self-end bg-blue-500 text-white p-3 px-4 rounded-2xl max-w-[75%] shadow-md' 
+        : 'self-start bg-white/10 text-white p-3 px-4 rounded-2xl max-w-[75%] backdrop-blur-sm shadow-md';
+      msgDiv.innerHTML = `<p class="whitespace-pre-line">${message}</p>`;
+      chatbotMessages.appendChild(msgDiv);
+      chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+    }
+
+    function findBestResponse(message) {
+      const normalizedInput = message.toLowerCase();
+      
+      // Check each category
+      for (const category of Object.values(chatbotResponses)) {
+        if (category.patterns.some(pattern => normalizedInput.includes(pattern))) {
+          return category.responses[Math.floor(Math.random() * category.responses.length)];
+        }
+      }
+
+      // Default responses for unrecognized input
+      const defaultResponses = [
+        "I'm not sure about that. Try asking about chat features, friends, or profile management!",
+        "I didn't quite catch that. You can ask me about how to use any feature in the chat app!",
+        "Hmm, could you rephrase that? I can help with chat features, friends, and profile settings."
+      ];
+
+      return defaultResponses[Math.floor(Math.random() * defaultResponses.length)];
+    }
+
+    chatbotSendBtn.addEventListener('click', () => {
+      const message = chatbotInput.value.trim();
+      if (message) {
+        // Show user message
+        addChatbotMessage(message, true);
+        chatbotInput.value = '';
+
+        // Show typing indicator
+        showTypingIndicator();
+
+        // Simulate thinking and typing
+        setTimeout(() => {
+          removeTypingIndicator();
+          const response = findBestResponse(message);
+          addChatbotMessage(response);
+        }, 1000 + Math.random() * 1000); // Random delay between 1-2 seconds
+      }
+    });
+
+    chatbotInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        chatbotSendBtn.click();
+      }
+    });
+  </script>
   <script>
     const socket = io();
     let currentChatUserId = null;
+
+    // Handle direct chat from URL parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const chatUserId = urlParams.get('chat');
+    if (chatUserId) {
+      // Find the friend in the list and simulate a click
+      document.addEventListener('DOMContentLoaded', () => {
+        const friendElements = document.querySelectorAll('.friend-item');
+        friendElements.forEach(el => {
+          if (el.getAttribute('data-user-id') === chatUserId) {
+            el.click();
+          }
+        });
+      });
+    }
 
     // Function to update status dot
     function updateUserStatus(userId, status) {
@@ -144,6 +606,22 @@
     // Listen for status changes
     socket.on('user_status_change', ({ userId, status }) => {
       updateUserStatus(userId, status);
+      
+      // If this is the current chat friend, update their status in the header
+      if (currentChatUserId === userId) {
+        const statusDot = document.querySelector('#chatFriendStatus span:first-child');
+        const statusText = document.querySelector('#chatFriendStatus span:last-child');
+        
+        if (status === 'online') {
+          statusDot.classList.remove('bg-red-500');
+          statusDot.classList.add('bg-green-500');
+          statusText.textContent = 'Online';
+        } else {
+          statusDot.classList.remove('bg-green-500');
+          statusDot.classList.add('bg-red-500');
+          statusText.textContent = 'Offline';
+        }
+      }
     });
 
     // Listen for new message previews
@@ -170,11 +648,74 @@
       }
     });
 
+    // Update chat header with friend info
+    function updateChatHeader(friend) {
+      const header = document.getElementById('chatHeader');
+      const img = document.getElementById('chatFriendImg');
+      const name = document.getElementById('chatFriendName');
+      const bio = document.getElementById('chatFriendBio');
+      const status = document.getElementById('chatFriendStatus');
+      
+      if (friend) {
+        img.src = friend.profile_picture || '/images/profile_pictures/default.jpg';
+        name.textContent = friend.username;
+        bio.textContent = friend.bio || 'No bio added';
+        
+        // Update status indicator
+        const statusDot = status.querySelector('span:first-child');
+        const statusText = status.querySelector('span:last-child');
+        const isOnline = document.querySelector(`[data-user-status="${friend._id}"]`)?.classList.contains('bg-green-500');
+        
+        if (isOnline) {
+          statusDot.classList.remove('bg-red-500');
+          statusDot.classList.add('bg-green-500');
+          statusText.textContent = 'Online';
+        } else {
+          statusDot.classList.remove('bg-green-500');
+          statusDot.classList.add('bg-red-500');
+          statusText.textContent = 'Offline';
+        }
+      } else {
+        img.src = '/images/profile_pictures/default.jpg';
+        name.textContent = 'Select a friend to chat';
+        bio.textContent = 'No chat selected';
+        status.querySelector('span:first-child').className = 'w-3 h-3 rounded-full bg-red-500';
+        status.querySelector('span:last-child').textContent = 'Offline';
+      }
+    }
+
     // Click handler for friend entries
     document.querySelectorAll('.friend-entry').forEach(el => {
       el.addEventListener('click', async () => {
         const otherId = el.getAttribute('data-user-id');
         currentChatUserId = otherId;
+        
+        // Show chat box and hide welcome message with animation
+        const welcomeMessage = document.getElementById('welcomeMessage');
+        const chatBox = document.getElementById('chatBox');
+        
+        // Hide welcome message with fade out
+        welcomeMessage.style.opacity = '0';
+        setTimeout(() => {
+          welcomeMessage.classList.add('hidden');
+          
+          // Show chat box with fade in
+          chatBox.classList.remove('hidden');
+          chatBox.style.opacity = '0';
+          requestAnimationFrame(() => {
+            chatBox.style.opacity = '1';
+          });
+        }, 300);
+        
+        // Update chat header with friend info
+        const friendData = {
+          _id: otherId,
+          username: el.querySelector('h2').textContent,
+          profile_picture: el.querySelector('img').src,
+          bio: '<%= user.friends.find(f => f._id.toString() === "' + otherId + '")?.bio %>'
+        };
+        updateChatHeader(friendData);
+        
         // Join room
         socket.emit('join', { otherUserId: otherId });
         // Load messages
@@ -237,37 +778,405 @@
         document.getElementById('sendBtn').click();
       }
     });
+
+    // Group Chat Functionality
+    const menuBtn = document.getElementById('menuBtn');
+    const dropdownMenu = document.getElementById('dropdownMenu');
+    const createGroupBtn = document.getElementById('createGroupBtn');
+    const createGroupModal = document.getElementById('createGroupModal');
+    const closeGroupModal = document.getElementById('closeGroupModal');
+    const groupForm = document.getElementById('groupForm');
+
+    // Fetch and display groups
+    async function fetchAndDisplayGroups() {
+      try {
+        const response = await fetch('/groups');
+        const data = await response.json();
+
+        if (data.success) {
+          data.groups.forEach(group => {
+            const groupEl = document.createElement('div');
+            groupEl.className = 'friend-entry flex items-center gap-3 p-3 bg-[#A9B4C2] hover:bg-gray-100 rounded-3xl transition duration-200 cursor-pointer';
+            groupEl.setAttribute('data-group-id', group._id);
+
+            groupEl.innerHTML = `
+              <div class="relative">
+                <div class="w-10 h-10 bg-white rounded-full overflow-hidden flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
+                  </svg>
+                </div>
+              </div>
+              <div class="flex flex-col flex-1 min-w-0">
+                <h2 class="font-bold">${group.name}</h2>
+                <p class="text-sm text-gray-700 truncate">${group.description || 'No description'}</p>
+              </div>
+            `;
+
+            // Add click handler for group chat
+            groupEl.addEventListener('click', () => openGroupChat(group));
+
+            // Add to user list before the first friend entry
+            const userList = document.getElementById('userList');
+            const firstFriend = userList.querySelector('.friend-entry');
+            if (firstFriend) {
+              userList.insertBefore(groupEl, firstFriend);
+            } else {
+              userList.appendChild(groupEl);
+            }
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching groups:', error);
+      }
+    }
+
+    // Initialize by fetching groups
+    fetchAndDisplayGroups();
+
+    // Handle incoming messages
+    socket.on('message', (data) => {
+      const container = document.getElementById('messagesInner');
+      const isMine = data.from === '<%= user._id %>';
+      
+      const msgEl = document.createElement('div');
+      msgEl.className = isMine 
+        ? 'self-end bg-blue-500 text-white p-3 px-4 rounded-2xl max-w-[75%] shadow-md' 
+        : 'self-start bg-white p-3 px-4 rounded-2xl max-w-[75%] shadow-md';
+      msgEl.innerHTML = `
+        <p class="text-xs ${isMine ? 'text-blue-100' : 'text-gray-600'} mb-1">${data.senderName || 'User'}</p>
+        <p class="break-words">${data.content}</p>
+      `;
+      container.appendChild(msgEl);
+      
+      // Scroll to bottom
+      const messagesContainer = document.getElementById('messagesContainer');
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    });
+
+    // Handle group messages
+    socket.on('groupMessage', (data) => {
+      const container = document.getElementById('messagesInner');
+      const isMine = data.sender._id === '<%= user._id %>';
+      
+      const msgEl = document.createElement('div');
+      msgEl.className = isMine 
+        ? 'self-end bg-blue-500 text-white p-3 px-4 rounded-2xl max-w-[75%] shadow-md' 
+        : 'self-start bg-white p-3 px-4 rounded-2xl max-w-[75%] shadow-md';
+      msgEl.innerHTML = `
+        <p class="text-xs ${isMine ? 'text-blue-100' : 'text-gray-600'} mb-1">${data.sender.username}</p>
+        <p class="break-words">${data.content}</p>
+      `;
+      container.appendChild(msgEl);
+      
+      // Scroll to bottom
+      const messagesContainer = document.getElementById('messagesContainer');
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    });
+
+    // Toggle dropdown menu
+    menuBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      dropdownMenu.classList.toggle('hidden');
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', () => {
+      dropdownMenu.classList.add('hidden');
+    });
+
+    // Open group creation modal
+    createGroupBtn.addEventListener('click', () => {
+      createGroupModal.classList.remove('hidden');
+      dropdownMenu.classList.add('hidden');
+    });
+
+    // Close modal when clicking close button
+    closeGroupModal.addEventListener('click', () => {
+      createGroupModal.classList.add('hidden');
+    });
+
+    // Close modal when clicking outside
+    createGroupModal.addEventListener('click', (e) => {
+      if (e.target === createGroupModal) {
+        createGroupModal.classList.add('hidden');
+      }
+    });
+
+    let currentGroupId = null;
+
+    // Function to open group chat
+    async function openGroupChat(group) {
+      currentChatUserId = null; // Reset current chat user
+      currentGroupId = group._id; // Set current group
+      
+      // Show chat box and hide welcome message
+      const welcomeMessage = document.getElementById('welcomeMessage');
+      const chatBox = document.getElementById('chatBox');
+      
+      welcomeMessage.classList.add('hidden');
+      chatBox.classList.remove('hidden');
+      
+      // Update chat header with group info
+      updateChatHeader({
+        profile_picture: null, // We'll use group icon
+        username: group.name,
+        bio: `${group.members.length} members`
+      });
+
+      // Join group room
+      socket.emit('join', { groupId: group._id });
+
+      // Load group messages
+      try {
+        const res = await fetch(`/groups/${group._id}/messages`);
+        const data = await res.json();
+        const container = document.getElementById('messagesInner');
+        container.innerHTML = '';
+
+        if (data.success && data.messages && data.messages.length) {
+          data.messages.forEach(m => {
+            const isMine = m.sender._id === '<%= user._id %>';
+            const msgEl = document.createElement('div');
+            msgEl.className = isMine 
+              ? 'self-end bg-blue-500 text-white p-3 px-4 rounded-2xl max-w-[75%] shadow-md' 
+              : 'self-start bg-white p-3 px-4 rounded-2xl max-w-[75%] shadow-md';
+            msgEl.innerHTML = `
+              <p class="text-xs text-gray-600 mb-1">${m.sender.username}</p>
+              <p class="break-words">${m.content}</p>
+            `;
+            msgEl.className = isMine ? 'self-end bg-blue-200 p-2 rounded-2xl max-w-[75%] ml-auto' : 'self-start bg-white p-2 rounded-2xl max-w-[75%] mr-auto';
+            container.appendChild(msgEl);
+          });
+        } else {
+          const elEmpty = document.createElement('div');
+          elEmpty.className = 'text-center w-full text-gray-600';
+          elEmpty.textContent = 'No messages yet — start the conversation!';
+          container.appendChild(elEmpty);
+        }
+
+        // Scroll to bottom
+        const messagesContainer = document.getElementById('messagesContainer');
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      } catch (error) {
+        console.error('Error loading group messages:', error);
+      }
+    }
+
+    // Listen for group messages
+    socket.on('group_message', ({ groupId, message }) => {
+      if (currentGroupId === groupId) {
+        const container = document.getElementById('messagesInner');
+        // Remove placeholder if present
+        if (container.children.length === 1 && container.children[0].textContent.includes('No messages')) {
+          container.innerHTML = '';
+        }
+
+        const isMine = message.sender._id === '<%= user._id %>';
+        const msgEl = document.createElement('div');
+        msgEl.className = isMine ? 'self-end bg-blue-200 p-2 rounded-2xl max-w-xs' : 'self-start bg-white p-2 rounded-2xl max-w-xs';
+        msgEl.innerHTML = `
+          <p class="text-xs text-gray-600 mb-1">${message.sender.username}</p>
+          <p>${message.content}</p>
+        `;
+        container.appendChild(msgEl);
+
+        const messagesContainer = document.getElementById('messagesContainer');
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      }
+    });
+
+    // File upload handling
+    let currentFile = null;
+
+    document.getElementById('fileInput').addEventListener('change', async function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      if (file.size > 25 * 1024 * 1024) { // 25MB limit
+        alert('File size should not exceed 25MB');
+        this.value = '';
+        return;
+      }
+
+      // Show file preview
+      currentFile = file;
+      document.getElementById('fileName').textContent = file.name;
+      document.getElementById('filePreview').classList.remove('hidden');
+    });
+
+    document.getElementById('removeFile').addEventListener('click', () => {
+      currentFile = null;
+      document.getElementById('fileInput').value = '';
+      document.getElementById('filePreview').classList.add('hidden');
+    });
+
+    // Update send message handler for both group and private messages
+    document.getElementById('sendBtn').addEventListener('click', async () => {
+      const input = document.getElementById('messageInput');
+      const content = input.value.trim();
+      
+      if ((!content && !currentFile) || (!currentChatUserId && !currentGroupId)) return;
+      
+      try {
+        let fileDetails = null;
+        
+        // Upload file if present
+        if (currentFile) {
+          const formData = new FormData();
+          formData.append('file', currentFile);
+          
+          const uploadResponse = await fetch('/chat/upload', {
+            method: 'POST',
+            body: formData
+          });
+          
+          const uploadResult = await uploadResponse.json();
+          if (!uploadResult.success) throw new Error(uploadResult.message);
+          
+          fileDetails = uploadResult.file;
+        }
+
+        // Prepare message content
+        let messageContent = content;
+        if (fileDetails) {
+          const fileIcon = getFileIcon(fileDetails.fileType);
+          messageContent = `
+            ${content ? content + '\n\n' : ''}
+            <div class="file-attachment p-2 bg-white/50 rounded-lg mt-2">
+              <a href="/chat/download/${fileDetails.fileName}" class="flex items-center gap-2 text-blue-600 hover:text-blue-800">
+                ${fileIcon}
+                <span class="truncate">${fileDetails.originalName}</span>
+                <span class="text-xs text-gray-500">(${formatFileSize(fileDetails.fileSize)})</span>
+              </a>
+            </div>
+          `;
+        }
+        
+        if (currentGroupId) {
+          // Send group message
+          socket.emit('send_message', {
+            to: currentGroupId,
+            content: messageContent,
+            fileAttachment: fileDetails,
+            isGroup: true
+          });
+        } else {
+          // Send private message
+          socket.emit('send_message', {
+            to: currentChatUserId,
+            content: messageContent,
+            fileAttachment: fileDetails,
+            isGroup: false
+          });
+        }
+        
+        // Clear input and file
+        input.value = '';
+        currentFile = null;
+        document.getElementById('fileInput').value = '';
+        document.getElementById('filePreview').classList.add('hidden');
+      } catch (error) {
+        console.error('Error sending message:', error);
+        alert('Error sending message. Please try again.');
+      }
+    });
+
+    // Helper function to get appropriate file icon
+    function getFileIcon(mimeType) {
+      let icon = '';
+      if (mimeType.startsWith('image/')) {
+        icon = '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>';
+      } else if (mimeType.startsWith('video/')) {
+        icon = '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>';
+      } else if (mimeType.startsWith('audio/')) {
+        icon = '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" /></svg>';
+      } else {
+        icon = '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>';
+      }
+      return icon;
+    }
+
+    // Helper function to format file size
+    function formatFileSize(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      else if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      else return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    // Handle group creation form submission
+    groupForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const formData = {
+        name: document.getElementById('groupName').value,
+        description: document.getElementById('groupDescription').value,
+        members: Array.from(document.querySelectorAll('input[name="members[]"]:checked')).map(cb => cb.value)
+      };
+
+      if (!formData.members.length) {
+        alert('Please select at least one member for the group');
+        return;
+      }
+
+      try {
+        const response = await fetch('/groups/create', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(formData)
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          // Close modal
+          createGroupModal.classList.add('hidden');
+          
+          // Reset form
+          groupForm.reset();
+          
+          // Add the new group to the list
+          const groupEl = document.createElement('div');
+          groupEl.className = 'friend-entry flex items-center gap-3 p-3 bg-[#A9B4C2] hover:bg-gray-100 rounded-3xl transition duration-200 cursor-pointer';
+          groupEl.setAttribute('data-group-id', data.group._id);
+
+          groupEl.innerHTML = `
+            <div class="relative">
+              <div class="w-10 h-10 bg-white rounded-full overflow-hidden flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
+                </svg>
+              </div>
+            </div>
+            <div class="flex flex-col flex-1 min-w-0">
+              <h2 class="font-bold">${data.group.name}</h2>
+              <p class="text-sm text-gray-700 truncate">${data.group.description || 'No description'}</p>
+            </div>
+          `;
+
+          // Add click handler for group chat
+          groupEl.addEventListener('click', () => openGroupChat(data.group));
+
+          // Add to user list before the first friend entry
+          const userList = document.getElementById('userList');
+          const firstFriend = userList.querySelector('.friend-entry');
+          if (firstFriend) {
+            userList.insertBefore(groupEl, firstFriend);
+          } else {
+            userList.appendChild(groupEl);
+          }
+        } else {
+          alert(data.message || 'Error creating group');
+        }
+      } catch (error) {
+        console.error('Error creating group:', error);
+        alert('Error creating group. Please try again.');
+      }
+    });
   </script>
     </main>
-
-    <!-- Right Sidebar: Chat Bot -->
-    <aside class="bg-[#7D98A1] w-[25%] h-full rounded-3xl flex flex-col relative">
-      <div class="h-[8vh] w-full bg-[#A9B4C2] rounded-t-3xl flex items-center gap-3 p-4">
-        <div class="w-10 h-10 bg-white rounded-full overflow-hidden">
-          <img src="/images/profile_pictures/chatbot.jpg" alt="Chatbot" class="object-cover w-full h-full" />
-        </div>
-        <h2 class="font-bold text-base">Chat Bot</h2>
-      </div>
-
-      <div class="flex-1 w-[95%] mx-auto py-3 px-2 mt-2 mb-2 rounded-2xl overflow-y-auto">
-        <div class="flex flex-col items-center justify-center h-full">
-          <span class="text-gray-600 text-base opacity-70">Chat bot coming soon...</span>
-        </div>
-      </div>
-
-      <div
-        class="h-[8vh] w-full bg-[#A9B4C2] rounded-b-3xl flex items-center gap-2 px-3 py-2 absolute bottom-0 left-0">
-        <div class="w-8 h-8 bg-white rounded-full"></div>
-        <input type="text" placeholder="Type a message..."
-          class="w-[80%] bg-[#A9B4C2] p-2 rounded-3xl outline-none text-sm placeholder-gray-600" />
-        <button class="bg-[#D9D9D9] flex items-center justify-center p-2 rounded-full">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-700" fill="none"
-            viewBox="0 0 24 24" stroke="currentColor">
-            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
-          </svg>
-        </button>
-      </div>
-    </aside>
 
   </div>
 </body>

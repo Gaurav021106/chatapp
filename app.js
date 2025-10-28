@@ -1,3 +1,6 @@
+// Load environment variables
+require('dotenv').config();
+
 // 1. MODULE IMPORTS
 const express = require('express');
 const app = express();
@@ -5,6 +8,58 @@ const path = require('path');
 const mongoose = require('mongoose');
 const cookieParser = require('cookie-parser');
 const jwt = require('jsonwebtoken');
+const multer = require('multer');
+const fs = require('fs');
+
+// Error handling middleware
+const errorHandler = (err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ 
+    success: false, 
+    message: process.env.NODE_ENV === 'production' 
+      ? 'Internal Server Error' 
+      : err.message 
+  });
+};
+
+// 404 handler middleware
+const notFoundHandler = (req, res) => {
+  res.status(404).json({ 
+    success: false, 
+    message: 'Resource not found' 
+  });
+};
+
+// Configure multer for handling file uploads
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        const dest = path.join(__dirname, 'public/images/profile_pictures');
+        // Create the directory if it doesn't exist
+        if (!fs.existsSync(dest)) {
+            fs.mkdirSync(dest, { recursive: true });
+        }
+        cb(null, dest);
+    },
+    filename: function (req, file, cb) {
+        // Generate unique filename using timestamp
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, uniqueSuffix + path.extname(file.originalname));
+    }
+});
+
+const upload = multer({ 
+    storage: storage,
+    limits: {
+        fileSize: 5 * 1024 * 1024 // 5MB limit
+    },
+    fileFilter: function (req, file, cb) {
+        // Accept images only
+        if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/)) {
+            return cb(new Error('Only image files are allowed!'), false);
+        }
+        cb(null, true);
+    }
+});
 const http = require('http');
 // Try to require the official 'socket.io' package; if missing, provide a helpful message.
 let Server;
@@ -12,6 +67,8 @@ let Server;
 let io;
 // Map of userId -> Set of socketIds for that user (to notify specific connected clients)
 const userSockets = new Map();
+// Track online users
+const onlineUsers = new Set();
 try {
   Server = require('socket.io').Server;
 } catch (e) {
@@ -29,11 +86,21 @@ try {
 }
 
 // 2. DATABASE CONNECTION
-mongoose.connect('mongodb://localhost:27017/userDB');
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log('Connected to MongoDB successfully'))
+  .catch(err => {
+    console.error('MongoDB connection error:', err);
+    process.exit(1);
+  });
 
 // 3. IMPORT MODELS
 const User = require('./models/user');
 const Message = require('./models/message');
+const Group = require('./models/group');
+
+// Import routes
+const groupRoutes = require('./routes/groups');
+const chatRoutes = require('./routes/chat');
 
 // 3. MIDDLEWARE SETUP
 app.use(cookieParser());
@@ -41,42 +108,14 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Add chat routes
+app.use('/chat', chatRoutes);
+
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
 // 4. AUTHENTICATION MIDDLEWARE
-function authenticateToken(req, res, next) {
-  const token = req.cookies.token;
-  if (!token) return res.redirect('/');
-  try {
-    // Use environment variable for key in production!
-    const decoded = jwt.verify(token, 'mysecretkey');
-    // Fetch full user document for profile routes
-    User.findById(decoded.id).then(user => {
-      if (!user) return res.redirect('/');
-      // Attach mongoose document for server-side operations
-      req.user = user;
-      // Also attach a safe plain object without sensitive fields for templates/APIs
-      if (user && typeof user.toSafeObject === 'function') {
-        try {
-          req.userSafe = user.toSafeObject();
-        } catch (e) {
-          // Fallback: shallow copy and remove password
-          const u = user.toObject ? user.toObject() : { ...user };
-          delete u.password;
-          req.userSafe = u;
-        }
-      } else {
-        const u = user && user.toObject ? user.toObject() : user;
-        if (u && u.password) delete u.password;
-        req.userSafe = u;
-      }
-      next();
-    });
-  } catch (err) {
-    return res.redirect('/');
-  }
-}
+const authenticateToken = require('./middleware/auth');
 
 // 5. ROUTES
 
@@ -120,6 +159,9 @@ app.get('/home', authenticateToken, async (req, res) => {
     user: { ...user, friends: friendsWithMessages }
   });
 });
+
+// Group routes
+app.use('/groups', groupRoutes);
 
 // Profile (protected) - FIXED VERSION
 app.get('/profile', authenticateToken, async (req, res) => {
@@ -272,13 +314,39 @@ app.get('/edit_profile', authenticateToken, (req, res) => {
 });
 
 // Update profile POST    
-app.post('/update_profile', authenticateToken, async (req, res) => {
+app.post('/update_profile', authenticateToken, upload.single('profileImage'), async (req, res) => {
   try {
-    const { bio, profile_picture, username } = req.body;
-    await User.findByIdAndUpdate(req.user._id, { bio, profile_picture, username });
+    const { bio, username } = req.body;
+    const updateData = { bio, username };
+    
+    // If a new profile image was uploaded
+    if (req.file) {
+      // Delete the old profile picture if it exists and isn't the default
+      if (req.user.profile_picture && 
+          req.user.profile_picture !== '/images/profile_pictures/default.jpg' &&
+          fs.existsSync(path.join(__dirname, 'public', req.user.profile_picture))) {
+        fs.unlinkSync(path.join(__dirname, 'public', req.user.profile_picture));
+      }
+      // Set the new profile picture path
+      updateData.profile_picture = '/images/profile_pictures/' + req.file.filename;
+    }
+
+    await User.findByIdAndUpdate(req.user._id, updateData);
     res.redirect('/profile');
   } catch (error) {
-    res.render('./pages/edit_profile', { user_info: req.userSafe || req.user, error: 'Error updating profile.' });
+    console.error('Profile update error:', error);
+    // Try to delete the uploaded file if it exists
+    if (req.file) {
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (e) {
+        console.error('Error deleting uploaded file:', e);
+      }
+    }
+    res.render('./pages/edit_profile', { 
+      user_info: req.userSafe || req.user, 
+      error: 'Error updating profile. ' + (error.message || '')
+    });
   }
 });
 
@@ -339,9 +407,6 @@ app.get('/logout', (req, res) => {
 const server = http.createServer(app);
 io = new Server(server);
 
-// Track online users
-const onlineUsers = new Set();
-
 // Helper to add/remove sockets for a user
 function addUserSocket(userId, socketId) {
   const set = userSockets.get(userId) || new Set();
@@ -392,31 +457,38 @@ io.on('connection', (socket) => {
   io.emit('user_status_change', { userId: userId.toString(), status: 'online' });
 
   // Join a 1:1 room. Client will emit 'join' with the other user's id
-  socket.on('join', ({ otherUserId }) => {
+  socket.on('join', ({ otherUserId, groupId }) => {
     (async () => {
       try {
-        const room = [userId.toString(), otherUserId.toString()].sort().join('_');
-        socket.join(room);
-        console.log(`User ${userId} joined room ${room}`);
+        if (groupId) {
+          // For group chats
+          socket.join(`group:${groupId}`);
+          console.log(`User ${userId} joined group ${groupId}`);
+        } else if (otherUserId) {
+          // For 1:1 chats
+          const room = [userId.toString(), otherUserId.toString()].sort().join('_');
+          socket.join(room);
+          console.log(`User ${userId} joined room ${room}`);
 
-        // When a user opens a chat (joins), mark unread messages from the other user as read
-        const updateResult = await Message.updateMany(
-          { from: otherUserId, to: userId, read: false },
-          { read: true }
-        );
+          // When a user opens a chat (joins), mark unread messages from the other user as read
+          const updateResult = await Message.updateMany(
+            { from: otherUserId, to: userId, read: false },
+            { read: true }
+          );
 
-        if (updateResult && (updateResult.modifiedCount > 0 || updateResult.nModified > 0)) {
-          const count = updateResult.modifiedCount || updateResult.nModified || 0;
-          // Notify the other user's connected sockets so they can clear unread counts
-          const sockets = userSockets.get(otherUserId.toString());
-          if (sockets) {
-            sockets.forEach(sid => {
-              io.to(sid).emit('messages_read', {
-                readerId: userId.toString(),
-                conversationWith: otherUserId.toString(),
-                count
+          if (updateResult && (updateResult.modifiedCount > 0 || updateResult.nModified > 0)) {
+            const count = updateResult.modifiedCount || updateResult.nModified || 0;
+            // Notify the other user's connected sockets so they can clear unread counts
+            const sockets = userSockets.get(otherUserId.toString());
+            if (sockets) {
+              sockets.forEach(sid => {
+                io.to(sid).emit('messages_read', {
+                  readerId: userId.toString(),
+                  conversationWith: otherUserId.toString(),
+                  count
+                });
               });
-            });
+            }
           }
         }
       } catch (err) {
@@ -428,21 +500,51 @@ io.on('connection', (socket) => {
   // Handle sending messages
   socket.on('send_message', async (payload) => {
     try {
-      const { to, content } = payload;
+      const { to, content, isGroup } = payload;
       if (!to || !content) return;
-      // Save message
-      const msg = new Message({ from: userId, to, content });
-      await msg.save();
 
-      const room = [userId.toString(), to.toString()].sort().join('_');
-      // Emit to room so both participants get it
-      io.to(room).emit('new_message', {
-        _id: msg._id,
-        from: msg.from,
-        to: msg.to,
-        content: msg.content,
-        createdAt: msg.createdAt
-      });
+      if (isGroup) {
+        // Handle group message
+        const group = await Group.findById(to);
+        if (!group || !group.members.includes(userId)) {
+          console.error('User not authorized to message this group');
+          return;
+        }
+
+        // Add message to group
+        group.messages.push({
+          sender: userId,
+          content
+        });
+        await group.save();
+
+        // Get the latest message with populated sender
+        const newMessage = group.messages[group.messages.length - 1];
+        await Group.populate(newMessage, {
+          path: 'sender',
+          select: 'username profile_picture'
+        });
+
+        // Emit to all group members
+        io.to(`group:${to}`).emit('group_message', {
+          groupId: to,
+          message: newMessage
+        });
+      } else {
+        // Handle 1:1 message
+        const msg = new Message({ from: userId, to, content });
+        await msg.save();
+
+        const room = [userId.toString(), to.toString()].sort().join('_');
+        // Emit to room so both participants get it
+        io.to(room).emit('new_message', {
+          _id: msg._id,
+          from: msg.from,
+          to: msg.to,
+          content: msg.content,
+          createdAt: msg.createdAt
+        });
+      }
     } catch (err) {
       console.error('Error handling send_message', err);
     }
@@ -506,8 +608,13 @@ app.get('/messages/:userId', authenticateToken, async (req, res) => {
 
 const PORT = process.env.PORT || 2000;
 
+// Add error handlers
+app.use(errorHandler);
+app.use(notFoundHandler);
+
+// Start server
 server.listen(PORT, () => {
-  console.log(`server (with socket.io) is running on port ${PORT}`);
+  console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
 });
 
 // Handle listen errors (e.g., port already in use) more gracefully
