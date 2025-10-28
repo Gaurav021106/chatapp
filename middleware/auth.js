@@ -7,7 +7,7 @@ function authenticateToken(req, res, next) {
 
   let decoded;
   try {
-    decoded = jwt.verify(token, process.env.JWT_SECRET);
+    decoded = jwt.verify(token, process.env.JWTSECRET);
   } catch (err) {
     return res.redirect('/');
   }

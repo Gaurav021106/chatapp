@@ -1,5 +1,7 @@
 // Load environment variables
 require('dotenv').config();
+console.log("JWTSECRET in ENV:", process.env.JWTSECRET);
+console.log("NODE_ENV in ENV:", process.env.NODE_ENV);
 
 // 1. MODULE IMPORTS
 const express = require('express');
