@@ -49,14 +49,16 @@
             <!-- Friends list column -->
             <div class="w-[30%] h-[98%] p-3 bg-[#7D98A1] rounded-3xl flex flex-col">
                 <div class="bg-white w-full rounded-3xl h-[15%]">
-                    <input type="text" placeholder="Search friends..."
+                    <!-- Search bar -->
+                    <input id="friendsSearch" type="text" placeholder="Search friends..."
                         class="w-full h-full bg-transparent p-2 rounded-3xl text-center outline-none" />
                 </div>
                 <div class="bg-white w-full rounded-3xl h-[80%] mt-4 overflow-y-auto p-2">
                     <h3 class="font-bold text-lg mb-2 text-center">Friends (<%= user_info.friends.length %>)</h3>
                     <% if (user_info.friends && user_info.friends.length > 0) { %>
                         <% user_info.friends.forEach(function(friend) { %>
-                            <div class="p-2 border-b border-gray-300 mt-1 rounded-3xl flex items-center gap-3 hover:bg-gray-100">
+                            <div class="friend-item p-2 border-b border-gray-300 mt-1 rounded-3xl flex items-center gap-3 hover:bg-gray-100"
+                                 data-username="<%= friend.username.toLowerCase() %>">
                                 <img class="w-8 h-8 rounded-full" src="<%= friend.profile_picture %>" alt="">
                                 <p class="font-bold"><%= friend.username %></p>
                             </div>
@@ -101,14 +103,15 @@
             <!-- All users column -->
             <div class="w-[30%] h-[98%] p-3 bg-[#7D98A1] rounded-3xl flex flex-col">
                 <div class="bg-white w-full rounded-3xl h-[15%]">
-                    <input type="text" placeholder="Search users..."
+                    <input id="usersSearch" type="text" placeholder="Search users..."
                         class="w-full h-full bg-transparent p-2 text-center rounded-3xl outline-none" />
                 </div>
                 <div class="bg-white w-full rounded-3xl h-[80%] mt-4 overflow-y-auto p-2">
                     <% if (all_users && all_users.length > 0) { %>
                         <% all_users.forEach(function(user) { %>
                             <% if (user._id.toString() !== user_info._id.toString()) { %>
-                                <div class="p-2 border-b border-gray-300 mt-1 rounded-3xl transition duration-300 ease-in-out flex items-center gap-3 p-3 hover:bg-gray-200 cursor-pointer">
+                                <div class="user-item p-2 border-b border-gray-300 mt-1 rounded-3xl transition duration-300 ease-in-out flex items-center gap-3 p-3 hover:bg-gray-200 cursor-pointer"
+                                     data-username="<%= user.username.toLowerCase() %>">
                                     <img class="w-5 h-5 rounded-full" src="<%= user.profile_picture %>" alt="">
                                     <p class="font-bold"><%= user.username %></p>
                                     
@@ -259,6 +262,41 @@
                         });
                 });
             });
+
+            // --- Client-side search/filtering for friends and users ---
+            function debounce(fn, delay) {
+                let timer;
+                return function (...args) {
+                    clearTimeout(timer);
+                    timer = setTimeout(() => fn.apply(this, args), delay);
+                };
+            }
+
+            function filterItems(inputEl, selector) {
+                const q = inputEl.value.trim().toLowerCase();
+                document.querySelectorAll(selector).forEach(function (item) {
+                    const name = (item.getAttribute('data-username') || item.innerText || '').toLowerCase();
+                    if (!q) {
+                        item.style.display = '';
+                    } else {
+                        item.style.display = name.indexOf(q) !== -1 ? '' : 'none';
+                    }
+                });
+            }
+
+            const friendsSearch = document.getElementById('friendsSearch');
+            if (friendsSearch) {
+                friendsSearch.addEventListener('input', debounce(function () {
+                    filterItems(this, '.friend-item');
+                }, 200));
+            }
+
+            const usersSearch = document.getElementById('usersSearch');
+            if (usersSearch) {
+                usersSearch.addEventListener('input', debounce(function () {
+                    filterItems(this, '.user-item');
+                }, 200));
+            }
         </script>
 
     </div>
