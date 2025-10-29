@@ -504,9 +504,9 @@
     function removeTypingIndicator() {
       const indicator = document.getElementById('typingIndicator');
       if (indicator) indicator.remove();
-    }
+    };
 
-      addChatbotMessage(message, isUser = false) {
+      addChatbotMessage(message, isUser = false){
       const msgDiv = document.createElement('div');
       msgDiv.className = isUser 
         ? 'self-end bg-blue-500 text-white p-3 px-4 rounded-2xl max-w-[75%] shadow-md' 
