@@ -10,16 +10,16 @@
 
 <body class="bg-[#5E6572] min-h-screen flex items-center justify-center p-4">
     <div class="w-full max-w-2xl bg-[#7D98A1] rounded-3xl p-6">
-        <h1 class="text-2xl font-bold mb-4">Edit Profile</h1>
+        <h1 class="text-2xl font-bold mb-7 text-center">Edit Profile</h1>
 
         <% if (typeof error !== 'undefined' && error) { %>
             <div class="bg-red-200 text-red-800 p-3 rounded mb-4"><%= error %></div>
         <% } %>
 
         <form action="/update_profile" method="POST" enctype="multipart/form-data" class="space-y-4">
-            <div class="flex gap-4 items-center">
+            <div class="flex gap-4 items-center justify-center">
                 <div class="relative group">
-                    <div class="w-24 h-24 rounded-full bg-white overflow-hidden">
+                    <div class="w-[20vh] h-[20vh] rounded-full bg-white overflow-hidden">
                         <img id="profilePreview" src="<%= user_info.profile_picture || '/images/profile_pictures/default.jpg' %>"
                             alt="profile" class="object-cover w-full h-full" />
                     </div>
@@ -34,10 +34,6 @@
                         </button>
                     </div>
                     <input type="file" id="profileImage" name="profileImage" accept="image/*" class="hidden" />
-                </div>
-                <div class="flex-1">
-                    <label class="block text-sm font-medium mb-1">Change Profile Picture</label>
-                    <p class="text-sm text-gray-600 mb-2">Click on the image to upload a new profile picture</p>
                 </div>
             </div>
 
@@ -55,21 +51,21 @@
                 });
             </script>
 
-            <div>
-                <label class="block text-sm font-medium mb-1">Username</label>
-                <input name="username" type="text" value="<%= user_info.username %>"
+            <div class="bg-[#A9B4C2] rounded-3xl p-4">
+                <label class="block text-xl font-bold mb-1 ">Username</label>
+                <input name="username" type="text" class="font-medium mt-2 ml-4" value="<%= user_info.username %>"
                     class="w-full p-2 rounded-2xl outline-none" required />
             </div>
 
-            <div>
-                <label class="block text-sm font-medium mb-1">Bio</label>
+            <div class="bg-[#A9B4C2] rounded-3xl p-4">
+                <label class="block text-xl font-bold mb-1">Bio</label>
                 <textarea name="bio" rows="4"
                     class="w-full p-2 rounded-2xl outline-none"><%= user_info.bio || '' %></textarea>
             </div>
 
             <div class="flex items-center gap-3">
-                <button type="submit" class="bg-[#5E6572] text-white py-2 px-4 rounded-full">Save</button>
-                <a href="/profile" class="text-sm text-gray-800 underline">Cancel</a>
+                <button type="submit" class="bg-blue-500 text-white py-3 px-5 rounded-full hover:bg-blue-700 cursor-pointer">Save</button>
+                <a href="/profile" class="text-sm text-gray-800 underline hover:font-bold cursor-pointer">Cancel</a>
             </div>
         </form>
 
