@@ -1,226 +1,314 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
 
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>Profile</title>
+    <style>
+        .animate-fadeIn {
+            animation: fadeIn 1s ease-out;
+        }
+
+        .animate-fadeInSlow {
+            animation: fadeIn 1.5s ease-out;
+        }
+
+        .animate-slideUp {
+            animation: slideUp 0.8s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Staggered Column Animation */
+        .column-1 {
+            animation-delay: 0.2s;
+        }
+
+        .column-2 {
+            animation-delay: 0.4s;
+        }
+
+        .column-3 {
+            animation-delay: 0.6s;
+        }
+
+        .animated-column {
+            opacity: 0;
+            /* Start hidden */
+            animation-fill-mode: both;
+            /* Retain final state */
+        }
+    </style>
 </head>
 
-<body>
-    <div class="bg-[#5E6572] flex-col items-center justify-center p-2 gap-3">
+<body class="bg-[#5E6572] flex-col items-center justify-center p-2 gap-3">
 
-        <!-- Top navigation bar -->
-        <div class="bg-gradient-to-r from-[#1C2321] to-[#2C3531] w-full rounded-full h-[8vh] flex justify-between items-center p-2 px-6 shadow-lg">
-            <div class="flex items-center gap-4">
-                <!-- Back to Home button -->
-                <a href="/home" class="w-[6vh] h-[6vh] bg-white rounded-full overflow-hidden flex items-center justify-center hover:scale-105 hover:ring-2 hover:ring-blue-400 transition-all shadow-md">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                    </svg>
-                </a>
-                <!-- Logo -->
-                <div id="logo" class="w-[6vh] h-[6vh] bg-white rounded-full overflow-hidden ring-2 ring-opacity-50 ring-white shadow-md transform hover:scale-105 transition-transform">
-                    <img src="/images/required/logo.jpg" alt="Logo" class="object-cover w-full h-full" />
-                </div>
-                <h1 class="text-xl font-bold text-white hidden sm:block">Profile</h1>
+    <div
+        class="bg-gradient-to-r from-[#1C2321] to-[#2C3531] w-full rounded-full h-[8vh] flex justify-between items-center p-2 px-6 shadow-lg animate-slideUp">
+        <div class="flex items-center gap-4">
+            <a href="/home"
+                class="w-[6vh] h-[6vh] bg-white rounded-full overflow-hidden flex items-center justify-center hover:scale-105 hover:ring-2 hover:ring-blue-400 transition-all shadow-md">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+            </a>
+            <div id="logo"
+                class="w-[6vh] h-[6vh] bg-white rounded-full overflow-hidden ring-2 ring-opacity-50 ring-white shadow-md transform hover:scale-105 transition-transform">
+                <img src="/images/required/logo.jpg" alt="Logo" class="object-cover w-full h-full" />
             </div>
-
-            <div class="flex items-center gap-4">
-                <a href="/logout" class="text-white opacity-80 hover:opacity-100 transition-opacity text-sm">Logout</a>
-            </div>
+            <h1 class="text-xl font-bold text-white hidden sm:block">Profile</h1>
         </div>
 
-        <!-- User information and Edit Profile -->
-        <div class="h-[30vh] bg-[#7D98A1] w-full flex items-center justify-start gap-5 mt-3 p-5 rounded-3xl">
-            <div class="w-[20vh] h-[20vh] bg-gray-300 rounded-full overflow-hidden">
-                <img src="<%= user_info.profile_picture %>" alt="Profile picture">
-            </div>
-            <div class="w-[90%] rounded-3xl h-[25vh] bg-[#D9D9D9] rounded-3xl~ px-4 py-2">
-                <div class="w-[50%] p-2">
-                    <h1 class="font-bold text-2xl mb-2">
-                        <%= user_info.username %>
-                    </h1>
-                    <p class="text-base">
-                        <%= user_info.bio %>
-                    </p>
-                </div>
-                <a href="/edit_profile" class="mt-2 bg-[#5E6572] text-white py-1 px-4 rounded-full">Edit Profile</a>
-            </div>
+        <div class="flex items-center gap-4">
+            <a href="/logout" class="text-white opacity-80 hover:opacity-100 transition-opacity text-sm">Logout</a>
         </div>
+    </div>
 
-        <!-- Main three-column section: Friends / Requests / All Users -->
-        <div class="w-full h-[56vh] flex items-center px-3 justify-between rounded-3xl mt-3">
-            <!-- Friends list column -->
-            <div class="w-[30%] h-[98%] p-3 bg-[#7D98A1] rounded-3xl flex flex-col">
-                <div class="bg-white w-full rounded-3xl h-[15%]">
-                    <!-- Search bar -->
-                    <input id="friendsSearch" type="text" placeholder="Search friends..."
-                        class="w-full h-full bg-transparent p-2 rounded-3xl text-center outline-none" />
-                </div>
-                <div class="bg-white w-full rounded-3xl h-[80%] mt-4 overflow-y-auto p-2">
-                    <h3 class="font-bold text-lg mb-2 text-center">Friends (<%= user_info.friends.length %>)</h3>
-                    <% if (user_info.friends && user_info.friends.length > 0) { %>
-                        <% user_info.friends.forEach(function(friend) { %>
-                            <a href="/home?chat=<%= friend._id %>" class="block">
-                                <div class="friend-item p-2 border-b border-gray-300 mt-1 rounded-3xl flex items-center gap-3 hover:bg-gray-100 transition-colors"
-                                     data-username="<%= friend.username.toLowerCase() %>">
-                                    <img class="w-8 h-8 rounded-full" src="<%= friend.profile_picture %>" alt="">
-                                    <p class="font-bold"><%= friend.username %></p>
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                                    </svg>
-                                </div>
-                            </a>
-                        <% }); %>
-                    <% } else { %>
-                        <p class="text-center text-gray-500 mt-4">No friends yet</p>
-                    <% } %>
-                </div>
+    <div
+        class="h-[30vh] bg-[#7D98A1] w-full flex items-center justify-start gap-5 mt-3 p-5 rounded-3xl shadow-xl animate-fadeInSlow">
+        <div class="w-[20vh] h-[20vh] bg-gray-300 rounded-full overflow-hidden shadow-lg hover:scale-105 transition-transform">
+            <img src="<%= user_info.profile_picture %>" alt="Profile picture">
+        </div>
+        <div class="w-full rounded-3xl h-[25vh] bg-[#D9D9D9] px-4 py-2 flex flex-col justify-between shadow-inner">
+            <div class="p-2">
+                <h1 class="font-bold text-2xl mb-2">
+                    <%= user_info.username %>
+                </h1>
+                <p class="text-base italic text-gray-700">
+                    <%= user_info.bio %>
+                </p>
             </div>
+            <a href="/edit_profile"
+                class="mt-auto self-start bg-blue-600 text-white py-2 px-6 rounded-full font-semibold hover:bg-blue-700 transition-colors shadow-md">Edit
+                Profile</a>
+        </div>
+    </div>
 
-            <!-- Friend requests column -->
-            <div class="w-[30%] h-[98%] p-3 bg-[#7D98A1] rounded-3xl flex flex-col">
-                <div class="bg-white w-full rounded-3xl h-[15%] flex items-center justify-center">
-                    <h3 class="font-bold text-lg">Friend Requests</h3>
-                </div>
-                <div class="bg-white w-full rounded-3xl h-[80%] mt-4 overflow-y-auto p-2">
-                    <% if (user_info.friend_requests && user_info.friend_requests.length > 0) { %>
-                        <% user_info.friend_requests.forEach(function(request) { %>
-                            <div class="p-2 border-b border-gray-300 mt-1 rounded-3xl flex items-center justify-between">
-                                <div class="flex items-center gap-3">
-                                    <img class="w-6 h-6 rounded-full" src="<%= request.profile_picture %>" alt="">
-                                    <p class="font-bold"><%= request.username %></p>
-                                </div>
-                                <div class="flex gap-2">
-                                    <button class="accept-request-btn bg-green-500 text-white px-2 py-1 rounded-full text-sm hover:bg-green-600"
-                                        data-user-id="<%= request._id %>">
-                                        Accept
-                                    </button>
-                                    <button class="decline-request-btn bg-red-500 text-white px-2 py-1 rounded-full text-sm hover:bg-red-600"
-                                        data-user-id="<%= request._id %>">
-                                        Decline
-                                    </button>
-                                </div>
+    <div class="w-full h-[56vh] flex items-center px-3 justify-between rounded-3xl mt-3">
+        <div
+            class="animated-column column-1 w-[30%] h-[98%] p-3 bg-[#7D98A1] rounded-3xl flex flex-col shadow-xl animate-slideUp">
+            <div class="bg-white w-full rounded-3xl h-[15%] shadow-md">
+                <input id="friendsSearch" type="text" placeholder="Search friends..."
+                    class="w-full h-full bg-transparent p-2 rounded-3xl text-center outline-none focus:ring-2 focus:ring-blue-400" />
+            </div>
+            <div class="bg-white w-full rounded-3xl h-[80%] mt-4 overflow-y-auto p-2 shadow-inner">
+                <h3 class="font-bold text-lg mb-2 text-center text-gray-700 border-b pb-1">Friends (<%= user_info.friends.length %>)</h3>
+                <% if (user_info.friends && user_info.friends.length > 0) { %>
+                    <% user_info.friends.forEach(function(friend) { %>
+                        <a href="/home?chat=<%= friend._id %>" class="block">
+                            <div
+                                class="friend-item p-2 border-b border-gray-300 mt-1 rounded-xl flex items-center gap-3 hover:bg-gray-100 transition-colors cursor-pointer"
+                                data-username="<%= friend.username.toLowerCase() %>">
+                                <img class="w-8 h-8 rounded-full object-cover" src="<%= friend.profile_picture %>"
+                                    alt="">
+                                <p class="font-bold text-gray-800"><%= friend.username %></p>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-auto text-blue-500" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                </svg>
                             </div>
+                        </a>
                         <% }); %>
-                    <% } else { %>
-                        <p class="text-center text-gray-500 mt-4">No friend requests</p>
-                    <% } %>
-                </div>
+                            <% } else { %>
+                                <p class="text-center text-gray-500 mt-4">No friends yet</p>
+                                <% } %>
             </div>
+        </div>
 
-            <!-- All users column -->
-            <div class="w-[30%] h-[98%] p-3 bg-[#7D98A1] rounded-3xl flex flex-col">
-                <div class="bg-white w-full rounded-3xl h-[15%]">
-                    <input id="usersSearch" type="text" placeholder="Search users..."
-                        class="w-full h-full bg-transparent p-2 text-center rounded-3xl outline-none" />
-                </div>
-                <div class="bg-white w-full rounded-3xl h-[80%] mt-4 overflow-y-auto p-2">
-                    <% if (all_users && all_users.length > 0) { %>
-                        <% all_users.forEach(function(user) { %>
-                            <% if (user._id.toString() !== user_info._id.toString()) { %>
-                                <div class="user-item p-2 border-b border-gray-300 mt-1 rounded-3xl transition duration-300 ease-in-out flex items-center gap-3 p-3 hover:bg-gray-200 cursor-pointer"
-                                     data-username="<%= user.username.toLowerCase() %>">
-                                    <img class="w-5 h-5 rounded-full" src="<%= user.profile_picture %>" alt="">
-                                    <p class="font-bold"><%= user.username %></p>
-                                    
-                                    <% 
-                                    // Check relationship status
-                                    let isFriend = user_info.friends.some(friend => friend._id && friend._id.toString() === user._id.toString());
-                                    let requestSent = user_info.friend_requests_sent.some(req => req._id ? req._id.toString() === user._id.toString() : req.toString() === user._id.toString());
-                                    let requestReceived = user_info.friend_requests.some(req => req._id ? req._id.toString() === user._id.toString() : req.toString() === user._id.toString());
-                                    %>
-                                    
-                                    <% if (isFriend) { %>
-                                        <span class="bg-green-500 text-white px-3 py-1 rounded-full ml-auto text-sm">Friends</span>
+        <div
+            class="animated-column column-2 w-[30%] h-[98%] p-3 bg-[#7D98A1] rounded-3xl flex flex-col shadow-xl animate-slideUp">
+            <div class="bg-white w-full rounded-3xl h-[15%] flex items-center justify-center shadow-md">
+                <h3 class="font-bold text-lg text-gray-800">Friend Requests</h3>
+            </div>
+            <div class="bg-white w-full rounded-3xl h-[80%] mt-4 overflow-y-auto p-2 shadow-inner">
+                <% if (user_info.friend_requests && user_info.friend_requests.length > 0) { %>
+                    <% user_info.friend_requests.forEach(function(request) { %>
+                        <div
+                            class="request-item p-2 border-b border-gray-300 mt-1 rounded-xl flex flex-col gap-2 hover:bg-gray-100 transition-colors">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <img class="w-8 h-8 rounded-full object-cover" src="<%= request.profile_picture %>"
+                                        alt="">
+                                    <p class="font-bold text-gray-800"><%= request.username %></p>
+                                </div>
+                                <span class="text-xs text-gray-500 italic">Incoming</span>
+                            </div>
+                            <div class="flex gap-2 justify-end pt-1">
+                                <button
+                                    class="accept-request-btn bg-green-500 text-white px-3 py-1 rounded-full text-sm hover:bg-green-600 transition-colors"
+                                    data-user-id="<%= request._id %>">
+                                    Accept
+                                </button>
+                                <button
+                                    class="decline-request-btn bg-red-500 text-white px-3 py-1 rounded-full text-sm hover:bg-red-600 transition-colors"
+                                    data-user-id="<%= request._id %>">
+                                    Decline
+                                </button>
+                            </div>
+                        </div>
+                        <% }); %>
+                            <% } else { %>
+                                <p class="text-center text-gray-500 mt-4">No friend requests</p>
+                                <% } %>
+            </div>
+        </div>
+
+        <div
+            class="animated-column column-3 w-[30%] h-[98%] p-3 bg-[#7D98A1] rounded-3xl flex flex-col shadow-xl animate-slideUp">
+            <div class="bg-white w-full rounded-3xl h-[15%] shadow-md">
+                <input id="usersSearch" type="text" placeholder="Search users..."
+                    class="w-full h-full bg-transparent p-2 text-center rounded-3xl outline-none focus:ring-2 focus:ring-blue-400" />
+            </div>
+            <div class="bg-white w-full rounded-3xl h-[80%] mt-4 overflow-y-auto p-2 shadow-inner">
+                <h3 class="font-bold text-lg mb-2 text-center text-gray-700 border-b pb-1">All Users</h3>
+                <% if (all_users && all_users.length > 0) { %>
+                    <% all_users.forEach(function(user) { %>
+                        <% if (user._id.toString() !== user_info._id.toString()) { %>
+                            <div
+                                class="user-item p-2 border-b border-gray-300 mt-1 rounded-xl transition duration-300 ease-in-out flex items-center gap-3 hover:bg-gray-200 cursor-pointer"
+                                data-username="<%= user.username.toLowerCase() %>">
+                                <img class="w-8 h-8 rounded-full object-cover" src="<%= user.profile_picture %>" alt="">
+                                <p class="font-bold text-gray-800"><%= user.username %></p>
+
+                                <% 
+                                // Check relationship status
+                                let isFriend = user_info.friends.some(friend => friend._id && friend._id.toString() === user._id.toString());
+                                let requestSent = user_info.friend_requests_sent.some(req => req._id ? req._id.toString() === user._id.toString() : req.toString() === user._id.toString());
+                                let requestReceived = user_info.friend_requests.some(req => req._id ? req._id.toString() === user._id.toString() : req.toString() === user._id.toString());
+                                %>
+
+                                <% if (isFriend) { %>
+                                    <span
+                                        class="bg-green-500 text-white px-3 py-1 rounded-full ml-auto text-sm opacity-90">Friends</span>
                                     <% } else if (requestSent) { %>
-                                        <button class="cancel-request-btn bg-gray-400 text-white px-3 py-1 rounded-full ml-auto hover:bg-gray-600 transition duration-300 ease-in-out cursor-pointer text-sm"
+                                        <button
+                                            class="cancel-request-btn bg-gray-400 text-white px-3 py-1 rounded-full ml-auto hover:bg-gray-600 transition duration-300 ease-in-out cursor-pointer text-sm"
                                             data-user-id="<%= user._id %>">
                                             Cancel Request
                                         </button>
-                                    <% } else if (requestReceived) { %>
-                                        <span class="bg-blue-400 text-white px-3 py-1 rounded-full ml-auto text-sm">Request Received</span>
-                                    <% } else { %>
-                                        <button class="add-friend-btn bg-blue-500 text-white px-3 py-1 rounded-full ml-auto hover:bg-blue-800 transition duration-300 ease-in-out cursor-pointer text-sm"
-                                            data-user-id="<%= user._id %>">
-                                            Add Friend
-                                        </button>
-                                    <% } %>
-                                </div>
+                                        <% } else if (requestReceived) { %>
+                                            <span
+                                                class="bg-blue-400 text-white px-3 py-1 rounded-full ml-auto text-sm opacity-90">Request
+                                                Received</span>
+                                            <% } else { %>
+                                                <button
+                                                    class="add-friend-btn bg-blue-500 text-white px-3 py-1 rounded-full ml-auto hover:bg-blue-800 transition duration-300 ease-in-out cursor-pointer text-sm"
+                                                    data-user-id="<%= user._id %>">
+                                                    Add Friend
+                                                </button>
+                                                <% } %>
+                            </div>
                             <% } %>
-                        <% }); %>
-                    <% } else { %>
-                        <p class="text-center text-gray-500 mt-4">No users found</p>
-                    <% } %>
-                </div>
+                                <% }); %>
+                                    <% } else { %>
+                                        <p class="text-center text-gray-500 mt-4">No users found</p>
+                                        <% } %>
             </div>
         </div>
+    </div>
 
-        <script>
-            // Add friend functionality
-            document.querySelectorAll('.add-friend-btn').forEach(function (btn) {
-                btn.addEventListener('click', function (e) {
-                    fetch('/add-friend', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ userId: btn.dataset.userId })
-                    })
-                        .then(res => res.json())
-                        .then(data => {
-                            if (data.success) {
-                                btn.textContent = "Request Sent";
-                                btn.classList.remove("bg-blue-500", "hover:bg-blue-800");
-                                btn.classList.add("bg-gray-400", "hover:bg-gray-600", "cancel-request-btn");
-                                btn.classList.remove("add-friend-btn");
-                                
-                                // Update click handler to cancel request
-                                btn.removeEventListener('click', arguments.callee);
-                                btn.addEventListener('click', cancelRequestHandler);
-                            } else {
-                                alert(data.message || 'Error sending friend request');
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error:', error);
-                            alert('Error sending friend request');
-                        });
-                });
-            });
+    <script>
+        // --- Client-side Interactivity and Animations ---
 
-            // Cancel friend request functionality
-            function cancelRequestHandler(e) {
-                const btn = e.target;
-                fetch('/cancel-friend-request', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId: btn.dataset.userId })
+        // Function to dynamically update the button state when cancelling a request
+        function updateButtonToCancelled(btn) {
+            btn.textContent = "Add Friend";
+            btn.classList.remove("bg-gray-400", "hover:bg-gray-600", "cancel-request-btn");
+            btn.classList.add("bg-blue-500", "hover:bg-blue-800", "add-friend-btn");
+
+            // Re-assign the add friend handler to the button element
+            btn.removeEventListener('click', cancelRequestHandler);
+            btn.addEventListener('click', addFriendHandler);
+        }
+
+        // Function to dynamically update the button state when sending a request
+        function updateButtonToSent(btn) {
+            btn.textContent = "Request Sent";
+            btn.classList.remove("bg-blue-500", "hover:bg-blue-800", "add-friend-btn");
+            btn.classList.add("bg-gray-400", "hover:bg-gray-600", "cancel-request-btn");
+
+            // Re-assign the cancel request handler to the button element
+            btn.removeEventListener('click', addFriendHandler);
+            btn.addEventListener('click', cancelRequestHandler);
+        }
+
+
+        // Add friend handler logic
+        function addFriendHandler(e) {
+            e.preventDefault();
+            const btn = e.target;
+            fetch('/add-friend', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: btn.dataset.userId })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        updateButtonToSent(btn);
+                    } else {
+                        alert(data.message || 'Error sending friend request');
+                    }
                 })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.success) {
-                            btn.textContent = "Add Friend";
-                            btn.classList.remove("bg-gray-400", "hover:bg-gray-600", "cancel-request-btn");
-                            btn.classList.add("bg-blue-500", "hover:bg-blue-800", "add-friend-btn");
-                            
-                            // Update click handler back to add friend
-                            btn.removeEventListener('click', cancelRequestHandler);
-                            btn.addEventListener('click', function(e) {
-                                document.querySelectorAll('.add-friend-btn').forEach(function (btn) {
-                                    btn.addEventListener('click', arguments.callee);
-                                });
-                            });
-                        } else {
-                            alert(data.message || 'Error cancelling friend request');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        alert('Error cancelling friend request');
-                    });
-            }
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error sending friend request');
+                });
+        }
 
-            // Initial setup for cancel request buttons
+        // Cancel friend request handler logic
+        function cancelRequestHandler(e) {
+            e.preventDefault();
+            const btn = e.target;
+            fetch('/cancel-friend-request', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: btn.dataset.userId })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        updateButtonToCancelled(btn);
+                    } else {
+                        alert(data.message || 'Error cancelling friend request');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error cancelling friend request');
+                });
+        }
+
+
+        document.addEventListener('DOMContentLoaded', function () {
+            // Initial setup for buttons
+            document.querySelectorAll('.add-friend-btn').forEach(function (btn) {
+                btn.addEventListener('click', addFriendHandler);
+            });
             document.querySelectorAll('.cancel-request-btn').forEach(function (btn) {
                 btn.addEventListener('click', cancelRequestHandler);
             });
@@ -228,6 +316,13 @@
             // Accept friend request functionality
             document.querySelectorAll('.accept-request-btn').forEach(function (btn) {
                 btn.addEventListener('click', function (e) {
+                    // Added a short fade out before reloading
+                    const requestItem = btn.closest('.request-item');
+                    if (requestItem) {
+                        requestItem.style.opacity = '0';
+                        requestItem.style.transition = 'opacity 0.3s ease-out';
+                    }
+
                     fetch('/accept-friend-request', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -236,8 +331,8 @@
                         .then(res => res.json())
                         .then(data => {
                             if (data.success) {
-                                // Refresh the page to update all sections
-                                window.location.reload();
+                                // Reload page after successful acceptance/rejection
+                                setTimeout(() => window.location.reload(), 300);
                             } else {
                                 alert(data.message || 'Error accepting friend request');
                             }
@@ -252,6 +347,7 @@
             // Decline friend request functionality
             document.querySelectorAll('.decline-request-btn').forEach(function (btn) {
                 btn.addEventListener('click', function (e) {
+                    const requestItem = btn.closest('.request-item');
                     fetch('/decline-friend-request', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -260,8 +356,12 @@
                         .then(res => res.json())
                         .then(data => {
                             if (data.success) {
-                                // Remove the request from the UI
-                                btn.closest('.p-2').remove();
+                                // Use animation for removing the request item
+                                if (requestItem) {
+                                    requestItem.style.opacity = '0';
+                                    requestItem.style.transition = 'opacity 0.3s ease-out, transform 0.3s ease-out';
+                                    setTimeout(() => requestItem.remove(), 300);
+                                }
                             } else {
                                 alert(data.message || 'Error declining friend request');
                             }
@@ -273,7 +373,8 @@
                 });
             });
 
-            // --- Client-side search/filtering for friends and users ---
+
+            // --- Client-side search/filtering (Kept as provided) ---
             function debounce(fn, delay) {
                 let timer;
                 return function (...args) {
@@ -286,11 +387,7 @@
                 const q = inputEl.value.trim().toLowerCase();
                 document.querySelectorAll(selector).forEach(function (item) {
                     const name = (item.getAttribute('data-username') || item.innerText || '').toLowerCase();
-                    if (!q) {
-                        item.style.display = '';
-                    } else {
-                        item.style.display = name.indexOf(q) !== -1 ? '' : 'none';
-                    }
+                    item.style.display = name.indexOf(q) !== -1 ? 'flex' : 'none'; // Use flex to maintain layout or none
                 });
             }
 
@@ -307,9 +404,8 @@
                     filterItems(this, '.user-item');
                 }, 200));
             }
-        </script>
-
-    </div>
+        });
+    </script>
 </body>
 
 </html>

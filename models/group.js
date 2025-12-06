@@ -8,7 +8,7 @@ const groupSchema = new mongoose.Schema({
   },
   group_picture: {
     type: String,
-    default: '/images/group_pictures/default.png'
+    default: '/images/group_pictures/default_group_pic.png'
   },
   description: {
     type: String,
@@ -32,6 +32,13 @@ const groupSchema = new mongoose.Schema({
     content: {
       type: String,
       required: true
+    },
+    file: {
+      fileName: String,
+      originalName: String,
+      fileType: String,
+      fileSize: Number,
+      url: String
     },
     timestamp: {
       type: Date,

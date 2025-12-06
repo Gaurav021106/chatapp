@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
+const JWTSECRET = require('../config/jwt');
 
 function authenticateToken(req, res, next) {
   const token = req.cookies.token;
@@ -7,7 +8,7 @@ function authenticateToken(req, res, next) {
 
   let decoded;
   try {
-    decoded = jwt.verify(token, process.env.JWTSECRET);
+    decoded = jwt.verify(token, JWTSECRET);
   } catch (err) {
     return res.redirect('/');
   }
@@ -16,12 +17,10 @@ function authenticateToken(req, res, next) {
     .then(user => {
       if (!user) return res.redirect('/');
       req.user = user;
-      // Attach a safe plain object without sensitive fields for templates/APIs
       if (user && typeof user.toSafeObject === 'function') {
         try {
           req.userSafe = user.toSafeObject();
         } catch (e) {
-          // Fallback: shallow copy and remove password
           const u = user.toObject ? user.toObject() : { ...user };
           delete u.password;
           req.userSafe = u;

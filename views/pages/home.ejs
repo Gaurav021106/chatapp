@@ -18,6 +18,8 @@
         class="w-[6vh] h-[6vh] bg-white rounded-full overflow-hidden ring-2 ring-opacity-50 ring-white shadow-md transform hover:scale-105 transition-transform">
         <img src="/images/required/logo.jpg" alt="Logo" class="object-cover w-full h-full" />
       </div>
+
+      <!-- (document summarize controls moved into chatbot panel) -->
       <h1 class="text-xl font-bold text-white hidden sm:block">ChatApp</h1>
     </div>
 
@@ -304,6 +306,7 @@
             <span class="w-3 h-3 rounded-full bg-red-500 shadow-glow"></span>
             <span class="text-sm text-white/80">Offline</span>
           </div>
+          <button id="summarizeCurrentChatBtn" title="Summarize this chat" class="ml-3 bg-white/10 text-white px-3 py-1 rounded-lg hover:bg-white/20 text-sm">Summarize</button>
         </div>
 
         <!-- Messages Container -->
@@ -405,7 +408,7 @@
         class="h-[8vh] w-full bg-white/5 backdrop-blur-md rounded-t-3xl flex items-center gap-3 p-4 border-b border-white/10">
         <div
           class="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl overflow-hidden flex items-center justify-center shadow-lg">
-          <img src="/images/assistant-logo.png" alt="Assistant" class="w-3/4 h-3/4 object-contain" />
+          <img src="/images/required/assistant_logo.jpg" alt="Assistant" class="w-3/4 h-3/4 rounded-full object-contain" />
         </div>
         <div class="flex-1">
           <h2 class="font-bold text-white text-lg">AI Assistant</h2>
@@ -424,17 +427,29 @@
 
       <!-- Chatbot Input -->
       <div
-        class="h-[8vh] w-full bg-white/5 backdrop-blur-md rounded-b-3xl flex items-center gap-3 p-4 border-t border-white/10">
+        class="h-[15vh] w-full bg-white/6 backdrop-blur-md rounded-b-3xl flex items-center gap-3 p-4 border-t border-white/10">
         <div class="flex-1 relative">
-          <input id="chatbotInput" type="text" placeholder="Ask me anything..."
-            class="w-full bg-white/10 p-3 pr-12 rounded-xl outline-none text-white placeholder-gray-400 shadow-inner focus:ring-2 focus:ring-blue-400/50 transition-all" />
-          <button id="chatbotSendBtn"
-            class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-blue-500 flex items-center justify-center p-2 rounded-lg hover:bg-blue-600 transition-colors shadow-md">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24"
-              stroke="currentColor">
-              <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
-            </svg>
-          </button>
+          <!-- Document summarize controls now live inside the chatbot panel -->
+          <div class="flex flex-col items-center gap-2">
+            <input type="file" id="docSummFile" class="hidden" accept=".txt,.pdf" />
+            <div class="flex items-center gap-2 whitespace-nowrap">
+              <button id="chooseDocBtn" type="button" class="bg-white/10 text-white text-xs px-2 py-0.5 h-7 rounded-md border border-white/10 hover:bg-white/20">Choose</button>
+              <button id="summarizeDocBtn" type="button" class="bg-blue-500 text-xs px-2 py-0.5 h-7 rounded-md text-white hover:bg-blue-600">Summarize</button>
+              <span id="chosenDocName" class="text-xs text-white/70 truncate max-w-[110px] ml-2">No file chosen</span>
+            </div>
+
+            <div class="flex-1 relative">
+              <input id="chatbotInput" type="text" placeholder="Ask me anything..."
+                class="w-full bg-white/10 p-3 pr-12 rounded-xl outline-none text-white placeholder-gray-400 shadow-inner focus:ring-2 focus:ring-blue-400/50 transition-all" />
+              <button id="chatbotSendBtn"
+                class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-blue-500 flex items-center justify-center p-2 rounded-lg hover:bg-blue-600 transition-colors shadow-md">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24"
+                  stroke="currentColor">
+                  <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                </svg>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -552,13 +567,44 @@
             // Show summary in chatbot
             chatbotSection.classList.remove('hidden');
             chatbotSection.style.display = 'flex';
-            addChatbotMessage(`Summarizing chat '${chatName}':\nGenerating summary...`, true);
+            addChatbotMessage(`Summarizing chat '${chatName}':\nGenerating summary...`, false);
 
-            // Simulate AI summary (replace with your AI endpoint if available)
-            setTimeout(() => {
-              const summary = `Total Messages: ${messages.length}\nFirst message: "${messages[0]}"\n\n(This is a sample. Replace me with AI summary!)`;
-              addChatbotMessage(`Summary for '${chatName}':\n${summary}`, false);
-            }, 1700);
+            try {
+              // Call server summarization endpoint
+              const resp = await fetch('/api/summarize/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chatId, type })
+              });
+              const json = await resp.json();
+              if (json.success) {
+                // Prefer AI-powered summary if available
+                const parts = json.summary.match(/.{1,140}/g) || [json.summary];
+                const typing = document.getElementById('typingIndicator');
+                if (typing) typing.remove();
+                for (let i=0;i<parts.length;i++){
+                  addChatbotMessage(parts[i], false);
+                  await new Promise(r=>setTimeout(r, 220));
+                }
+              } else {
+                // Fallback: try AI summarizer endpoint if available
+                try {
+                  const aiResp = await fetch('/api/summarize/chat-ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chatId, type }) });
+                  const aiJson = await aiResp.json();
+                  if (aiJson.success) {
+                    const parts2 = aiJson.summary.match(/.{1,140}/g) || [aiJson.summary];
+                    for (let p of parts2) { addChatbotMessage(p, false); await new Promise(r=>setTimeout(r,220)); }
+                  } else {
+                    addChatbotMessage('Could not generate summary: ' + (json.message || 'Unknown error'), false);
+                  }
+                } catch (e) {
+                  addChatbotMessage('Could not generate summary: ' + (json.message || 'Unknown error'), false);
+                }
+              }
+            } catch (err) {
+              console.error('Summarize error', err);
+              addChatbotMessage('Error contacting summarization service', false);
+            }
           });
         }
 
@@ -632,6 +678,52 @@
           chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
         }
 
+        // Document summarization handling (chatbot controls)
+        try {
+          const chooseDocBtn = document.getElementById('chooseDocBtn');
+          const docSummFile = document.getElementById('docSummFile');
+          const summarizeDocBtn = document.getElementById('summarizeDocBtn');
+          const chosenDocName = document.getElementById('chosenDocName');
+
+          if (chooseDocBtn && docSummFile && summarizeDocBtn && chosenDocName) {
+            chooseDocBtn.addEventListener('click', () => docSummFile.click());
+            docSummFile.addEventListener('change', () => {
+              const f = docSummFile.files[0];
+              chosenDocName.textContent = f ? f.name : 'No file chosen';
+            });
+
+            summarizeDocBtn.addEventListener('click', async () => {
+              const f = docSummFile.files[0];
+              if (!f) return alert('Choose a .txt or .pdf file to summarize');
+
+              chatbotSection.classList.remove('hidden');
+              chatbotSection.style.display = 'flex';
+              addChatbotMessage('Uploading and analyzing document... Please wait', false);
+
+              try {
+                const fd = new FormData();
+                fd.append('file', f);
+                const resp = await fetch('/api/summarize/document', { method: 'POST', body: fd });
+                const json = await resp.json();
+                if (json.success) {
+                  const parts = json.summary.match(/.{1,140}/g) || [json.summary];
+                  for (let i = 0; i < parts.length; i++) {
+                    addChatbotMessage(parts[i], false);
+                    await new Promise(r => setTimeout(r, 220));
+                  }
+                } else {
+                  addChatbotMessage('Could not summarize document: ' + (json.message || 'Unknown'), false);
+                }
+              } catch (err) {
+                console.error(err);
+                addChatbotMessage('Error contacting summarization service', false);
+              }
+            });
+          }
+        } catch (e) {
+          console.error('Chatbot document handlers init failed', e);
+        }
+
         function findBestResponse(message) {
           const normalizedInput = message.toLowerCase();
           for (const category of Object.values(chatbotResponses)) {
@@ -647,17 +739,65 @@
           return defaultResponses[Math.floor(Math.random() * defaultResponses.length)];
         }
 
-        chatbotSendBtn.addEventListener('click', () => {
+        chatbotSendBtn.addEventListener('click', async () => {
           const message = chatbotInput.value.trim();
-          if (message) {
-            addChatbotMessage(message, true);
-            chatbotInput.value = '';
-            showTypingIndicator();
-            setTimeout(() => {
-              removeTypingIndicator();
-              const response = findBestResponse(message);
-              addChatbotMessage(response);
-            }, 1000 + Math.random() * 1000);
+          if (!message) return;
+
+          // Show user's message
+          addChatbotMessage(message, true);
+          chatbotInput.value = '';
+
+          // Show typing indicator
+          showTypingIndicator();
+
+          // Try server-side streaming chat endpoint
+          try {
+            const resp = await fetch('/api/chat/stream', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ message })
+            });
+            if (!resp.ok) {
+              throw new Error('Chat API error');
+            }
+
+            const reader = resp.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+            // Read streamed NDJSON lines
+            while (true) {
+              const { value, done } = await reader.read();
+              if (done) break;
+              buffer += decoder.decode(value, { stream: true });
+              const lines = buffer.split('\n');
+              // Keep last partial line in buffer
+              buffer = lines.pop();
+              for (const line of lines) {
+                if (!line.trim()) continue;
+                try {
+                  const obj = JSON.parse(line);
+                  if (obj.chunk) addChatbotMessage(obj.chunk, false);
+                  if (obj.done) {
+                    // finished
+                  }
+                } catch (e) {
+                  // ignore parse errors
+                }
+              }
+            }
+            // Process any final buffer
+            if (buffer && buffer.trim()) {
+              try {
+                const obj = JSON.parse(buffer.trim());
+                if (obj.chunk) addChatbotMessage(obj.chunk, false);
+              } catch (e) {}
+            }
+            removeTypingIndicator();
+          } catch (err) {
+            console.error('Chat stream error', err);
+            removeTypingIndicator();
+            const fallback = findBestResponse(message);
+            addChatbotMessage(fallback, false);
           }
         });
 
@@ -754,6 +894,38 @@
         }
       });
 
+      // Summarize current open chat using AI (button handler)
+      const summarizeCurrentChatBtn = document.getElementById('summarizeCurrentChatBtn');
+      if (summarizeCurrentChatBtn) {
+        summarizeCurrentChatBtn.addEventListener('click', async () => {
+          // Decide target: group or direct
+          let chatId = currentGroupId || currentChatUserId;
+          let type = currentGroupId ? 'group' : (currentChatUserId ? 'friend' : null);
+          if (!chatId || !type) return alert('Select a chat or group first');
+
+          chatbotSection.classList.remove('hidden');
+          chatbotSection.style.display = 'flex';
+          addChatbotMessage('Generating AI summary for this chat... Please wait', false);
+
+          try {
+            const resp = await fetch('/api/summarize/chat-ai', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ chatId, type })
+            });
+            const json = await resp.json();
+            if (json.success) {
+              const parts = json.summary.match(/.{1,140}/g) || [json.summary];
+              for (let p of parts) { addChatbotMessage(p, false); await new Promise(r=>setTimeout(r,220)); }
+            } else {
+              addChatbotMessage('AI summary failed: ' + (json.message || 'Unknown'), false);
+            }
+          } catch (e) {
+            console.error('Summarize AI error', e);
+            addChatbotMessage('AI summary failed', false);
+          }
+        });
+      }
+
       // Update chat header with friend info
       function updateChatHeader(friend) {
         const header = document.getElementById('chatHeader');
@@ -832,10 +1004,7 @@
           if (data.success && data.messages && data.messages.length) {
             data.messages.forEach(m => {
               const isMine = m.from.toString() === '<%= user._id %>';
-              const msgEl = document.createElement('div');
-              msgEl.className = isMine ? 'self-end bg-blue-200 p-2 rounded-2xl max-w-xs' : 'self-start bg-white p-2 rounded-2xl max-w-xs';
-              msgEl.textContent = m.content;
-              container.appendChild(msgEl);
+              container.appendChild(createMessageElement(m.content, m.file, isMine));
             });
           } else {
             const elEmpty = document.createElement('div');
@@ -859,23 +1028,13 @@
           // Remove placeholder if present
           if (container.children.length === 1 && container.children[0].textContent.includes('No messages')) container.innerHTML = '';
           const isMine = msg.from.toString() === '<%= user._id %>';
-          const msgEl = document.createElement('div');
-          msgEl.className = isMine ? 'self-end bg-blue-200 p-2 rounded-2xl max-w-xs' : 'self-start bg-white p-2 rounded-2xl max-w-xs';
-          msgEl.textContent = msg.content;
-          container.appendChild(msgEl);
+          container.appendChild(createMessageElement(msg.content, msg.file, isMine));
           const messagesContainer = document.getElementById('messagesContainer');
           messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
       });
 
-      // Sending messages
-      document.getElementById('sendBtn').addEventListener('click', () => {
-        const input = document.getElementById('messageInput');
-        const content = input.value.trim();
-        if (!content || !currentChatUserId) return;
-        socket.emit('send_message', { to: currentChatUserId, content });
-        input.value = '';
-      });
+      // (removed simple send handler — replaced by enhanced handler below that supports attachments)
 
       // Also send on Enter
       document.getElementById('messageInput').addEventListener('keydown', (e) => {
@@ -944,16 +1103,7 @@
       socket.on('message', (data) => {
         const container = document.getElementById('messagesInner');
         const isMine = data.from === '<%= user._id %>';
-
-        const msgEl = document.createElement('div');
-        msgEl.className = isMine
-          ? 'self-end bg-blue-500 text-white p-3 px-4 rounded-2xl max-w-[75%] shadow-md'
-          : 'self-start bg-white p-3 px-4 rounded-2xl max-w-[75%] shadow-md';
-        msgEl.innerHTML = `
-        <p class="text-xs ${isMine ? 'text-blue-100' : 'text-gray-600'} mb-1">${data.senderName || 'User'}</p>
-        <p class="break-words">${data.content}</p>
-      `;
-        container.appendChild(msgEl);
+        container.appendChild(createMessageElement(data.content, data.file, isMine, data.senderName || 'User'));
 
         // Scroll to bottom
         const messagesContainer = document.getElementById('messagesContainer');
@@ -964,16 +1114,9 @@
       socket.on('groupMessage', (data) => {
         const container = document.getElementById('messagesInner');
         const isMine = data.sender._id === '<%= user._id %>';
-
-        const msgEl = document.createElement('div');
-        msgEl.className = isMine
-          ? 'self-end bg-blue-500 text-white p-3 px-4 rounded-2xl max-w-[75%] shadow-md'
-          : 'self-start bg-white p-3 px-4 rounded-2xl max-w-[75%] shadow-md';
-        msgEl.innerHTML = `
-        <p class="text-xs ${isMine ? 'text-blue-100' : 'text-gray-600'} mb-1">${data.sender.username}</p>
-        <p class="break-words">${data.content}</p>
-      `;
-        container.appendChild(msgEl);
+        // data may contain file metadata under data.message.file or data.file
+        const fileMeta = data.message && data.message.file ? data.message.file : data.file;
+        container.appendChild(createMessageElement(data.content || data.message?.content, fileMeta, isMine, data.sender.username));
 
         // Scroll to bottom
         const messagesContainer = document.getElementById('messagesContainer');
@@ -1043,16 +1186,7 @@
           if (data.success && data.messages && data.messages.length) {
             data.messages.forEach(m => {
               const isMine = m.sender._id === '<%= user._id %>';
-              const msgEl = document.createElement('div');
-              msgEl.className = isMine
-                ? 'self-end bg-blue-500 text-white p-3 px-4 rounded-2xl max-w-[75%] shadow-md'
-                : 'self-start bg-white p-3 px-4 rounded-2xl max-w-[75%] shadow-md';
-              msgEl.innerHTML = `
-              <p class="text-xs text-gray-600 mb-1">${m.sender.username}</p>
-              <p class="break-words">${m.content}</p>
-            `;
-              msgEl.className = isMine ? 'self-end bg-blue-200 p-2 rounded-2xl max-w-[75%] ml-auto' : 'self-start bg-white p-2 rounded-2xl max-w-[75%] mr-auto';
-              container.appendChild(msgEl);
+              container.appendChild(createMessageElement(m.content, m.file, isMine, m.sender.username));
             });
           } else {
             const elEmpty = document.createElement('div');
@@ -1079,13 +1213,7 @@
           }
 
           const isMine = message.sender._id === '<%= user._id %>';
-          const msgEl = document.createElement('div');
-          msgEl.className = isMine ? 'self-end bg-blue-200 p-2 rounded-2xl max-w-xs' : 'self-start bg-white p-2 rounded-2xl max-w-xs';
-          msgEl.innerHTML = `
-          <p class="text-xs text-gray-600 mb-1">${message.sender.username}</p>
-          <p>${message.content}</p>
-        `;
-          container.appendChild(msgEl);
+          container.appendChild(createMessageElement(message.content, message.file, isMine, message.sender.username));
 
           const messagesContainer = document.getElementById('messagesContainer');
           messagesContainer.scrollTop = messagesContainer.scrollHeight;
@@ -1143,21 +1271,8 @@
             fileDetails = uploadResult.file;
           }
 
-          // Prepare message content
-          let messageContent = content;
-          if (fileDetails) {
-            const fileIcon = getFileIcon(fileDetails.fileType);
-            messageContent = `
-            ${content ? content + '\n\n' : ''}
-            <div class="file-attachment p-2 bg-white/50 rounded-lg mt-2">
-              <a href="/chat/download/${fileDetails.fileName}" class="flex items-center gap-2 text-blue-600 hover:text-blue-800">
-                ${fileIcon}
-                <span class="truncate">${fileDetails.originalName}</span>
-                <span class="text-xs text-gray-500">(${formatFileSize(fileDetails.fileSize)})</span>
-              </a>
-            </div>
-          `;
-          }
+          // Prepare message content (plain text only; file metadata is sent separately)
+          let messageContent = content || '';
 
           if (currentGroupId) {
             // Send group message
@@ -1208,6 +1323,57 @@
         if (bytes < 1024) return bytes + ' B';
         else if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
         else return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+      }
+
+      // Create an attachment DOM element from file metadata
+      function createAttachmentElement(file) {
+        if (!file) return null;
+        const wrap = document.createElement('div');
+        wrap.className = 'file-attachment p-2 bg-white/50 rounded-lg mt-2';
+
+        const a = document.createElement('a');
+        a.href = file.url || `/chat/download/${file.fileName}`;
+        a.className = 'flex items-center gap-2 text-blue-600 hover:text-blue-800';
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+
+        const iconSpan = document.createElement('span');
+        iconSpan.innerHTML = getFileIcon(file.fileType || '');
+
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'truncate';
+        nameSpan.textContent = file.originalName || file.fileName;
+
+        const sizeSpan = document.createElement('span');
+        sizeSpan.className = 'text-xs text-gray-500';
+        if (file.fileSize) sizeSpan.textContent = `(${formatFileSize(file.fileSize)})`;
+
+        a.appendChild(iconSpan);
+        a.appendChild(nameSpan);
+        a.appendChild(sizeSpan);
+        wrap.appendChild(a);
+        return wrap;
+      }
+
+      // Create a message element (text + optional attachment)
+      function createMessageElement(content, file, isMine, senderName) {
+        const msgEl = document.createElement('div');
+        msgEl.className = isMine ? 'self-end bg-blue-200 p-2 rounded-2xl max-w-xs' : 'self-start bg-white p-2 rounded-2xl max-w-xs';
+        if (senderName) {
+          const nameP = document.createElement('p');
+          nameP.className = 'text-xs text-gray-600 mb-1';
+          nameP.textContent = senderName;
+          msgEl.appendChild(nameP);
+        }
+        const contentP = document.createElement('p');
+        contentP.className = 'break-words';
+        contentP.textContent = content || '';
+        msgEl.appendChild(contentP);
+        if (file) {
+          const attach = createAttachmentElement(file);
+          if (attach) msgEl.appendChild(attach);
+        }
+        return msgEl;
       }
 
       // Handle group creation form submission

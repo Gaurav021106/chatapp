@@ -5,20 +5,52 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Login | ChatApp</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .animate-fadeIn {
+        animation: fadeIn 1s ease forwards;
+      }
+
+      @keyframes backgroundShift {
+        0% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
+        100% {
+          background-position: 0% 50%;
+        }
+      }
+      .bg-animated {
+        background: linear-gradient(270deg, #5E6572, #7D98A1, #A9B4C2);
+        background-size: 600% 600%;
+        animation: backgroundShift 15s ease infinite;
+      }
+    </style>
   </head>
 
-  <body class="bg-[#5E6572] flex justify-center items-center min-h-screen">
+  <body class="bg-animated flex justify-center items-center min-h-screen">
     <form
       action="/check"
       method="post"
-      class="bg-[#7D98A1] w-[90%] sm:w-[60%] md:w-[40%] lg:w-[30%] rounded-3xl p-6 flex flex-col justify-center items-center shadow-xl"
+      class="animate-fadeIn bg-[#7D98A1] w-[90%] sm:w-[60%] md:w-[40%] lg:w-[30%] rounded-3xl p-6 flex flex-col justify-center items-center shadow-xl"
     >
       <h1 class="text-3xl font-bold text-center mb-8 text-white">
         Welcome to ChatApp
       </h1>
 
       <input
-        class="bg-[#A9B4C2] hover:bg-[#D9D9D9] transition duration-300 ease-in-out text-center font-semibold rounded-3xl w-full h-10 mb-3 focus:outline-none focus:ring-2 focus:ring-blue-400"
+        class="bg-[#A9B4C2] hover:bg-[#D9D9D9] transition duration-300 ease-in-out text-center font-semibold rounded-3xl w-full h-10 mb-3 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:shadow-lg"
         type="text"
         name="username"
         placeholder="Enter Username"
@@ -26,7 +58,7 @@
       />
 
       <input
-        class="bg-[#A9B4C2] hover:bg-[#D9D9D9] transition duration-300 ease-in-out text-center font-semibold rounded-3xl w-full h-10 mb-3 focus:outline-none focus:ring-2 focus:ring-blue-400"
+        class="bg-[#A9B4C2] hover:bg-[#D9D9D9] transition duration-300 ease-in-out text-center font-semibold rounded-3xl w-full h-10 mb-3 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:shadow-lg"
         type="password"
         name="password"
         placeholder="Enter Password"
@@ -34,7 +66,7 @@
       />
 
       <button
-        class="bg-blue-600 hover:bg-blue-800 transition duration-300 ease-in-out text-white font-bold rounded-3xl w-full h-10 mt-2 shadow-md"
+        class="bg-blue-600 transform transition duration-300 ease-in-out text-white font-bold rounded-3xl w-full h-10 mt-2 shadow-md hover:scale-105 hover:bg-blue-800"
         type="submit"
       >
         Login

@@ -3,6 +3,7 @@ require('dotenv').config();
 console.log("JWTSECRET in ENV:", process.env.JWTSECRET);
 console.log("NODE_ENV in ENV:", process.env.NODE_ENV);
 
+const JWTSECRET = require('./config/jwt');
 // 1. MODULE IMPORTS
 const express = require('express');
 const app = express();
@@ -103,6 +104,7 @@ const Group = require('./models/group');
 // Import routes
 const groupRoutes = require('./routes/groups');
 const chatRoutes = require('./routes/chat');
+const aiRoutes = require('./routes/ai');
 
 // 3. MIDDLEWARE SETUP
 app.use(cookieParser());
@@ -112,6 +114,8 @@ app.use(express.urlencoded({ extended: true }));
 
 // Add chat routes
 app.use('/chat', chatRoutes);
+// AI / summarization routes
+app.use('/api', aiRoutes);
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
@@ -352,29 +356,38 @@ app.post('/update_profile', authenticateToken, upload.single('profileImage'), as
   }
 });
 
-// User signup POST
 app.post('/create', async (req, res) => {
   try {
     const { username, password, email } = req.body;
-    // Prevent duplicate username/email
+    if (!username || !password || !email) {
+      return res.render('./auth/signup', { error: 'All fields are required.' });
+    }
+
     const existingByEmail = await User.findByEmail(email);
     const existingByUsername = await User.findByUsername(username);
     if (existingByEmail || existingByUsername) {
       return res.render('./auth/signup', { error: 'Username or email already exists.' });
     }
 
-    // Create user - password hashing is handled by User model pre-save middleware
     const user = new User({ username, email, password });
     await user.save();
-    // Generate JWT
-    const token = jwt.sign({ id: user._id }, 'mysecretkey');
-    // Set JWT as cookie
+
+    const token = jwt.sign({ id: user._id }, JWTSECRET);
     res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production' });
-    // Redirect to home/profile
     res.redirect('/home');
   } catch (error) {
     console.error('Error creating user:', error);
-    res.render('./auth/signup', { error: 'Error creating user. Username or email may already exist.' });
+    let errorMessage = 'Error creating user.';
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(err => err.message);
+      errorMessage = messages.join(' ');
+    } else if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern)[0];
+      errorMessage = `${field.charAt(0).toUpperCase() + field.slice(1)} already exists.`;
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+    res.render('./auth/signup', { error: errorMessage });
   }
 });
 
@@ -382,14 +395,13 @@ app.post('/create', async (req, res) => {
 app.post('/check', async (req, res) => {
   const { username, password } = req.body;
   try {
-    // Use model helper to find by username (case-insensitive)
     const user = await User.findByUsername(username);
     if (!user) return res.render('./auth/login', { error: 'User not found' });
 
     const isMatch = await user.validatePassword(password);
     if (!isMatch) return res.render('./auth/login', { error: 'Invalid username or password' });
 
-    const token = jwt.sign({ id: user._id }, 'mysecretkey');
+    const token = jwt.sign({ id: user._id }, JWTSECRET);
     res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production' });
     return res.redirect('/home');
   } catch (err) {
@@ -397,13 +409,6 @@ app.post('/check', async (req, res) => {
     return res.render('./auth/login', { error: 'An error occurred during login' });
   }
 });
-
-// Logout route
-app.get('/logout', (req, res) => {
-  res.clearCookie('token');
-  res.redirect('/');
-});
-
 // 6. SERVER START
 // Create HTTP server and attach Socket.IO
 const server = http.createServer(app);
@@ -502,8 +507,11 @@ io.on('connection', (socket) => {
   // Handle sending messages
   socket.on('send_message', async (payload) => {
     try {
-      const { to, content, isGroup } = payload;
-      if (!to || !content) return;
+      const { to, content, isGroup, fileAttachment } = payload;
+      if (!to) return;
+
+      // Normalize content to plain text (don't accept HTML blobs from clients)
+      const safeContent = (typeof content === 'string') ? content : '';
 
       if (isGroup) {
         // Handle group message
@@ -513,11 +521,22 @@ io.on('connection', (socket) => {
           return;
         }
 
-        // Add message to group
-        group.messages.push({
+        // Add message to group (include optional file metadata)
+        const messageObj = {
           sender: userId,
-          content
-        });
+          content: safeContent
+        };
+        if (fileAttachment) {
+          messageObj.file = {
+            fileName: fileAttachment.fileName,
+            originalName: fileAttachment.originalName,
+            fileType: fileAttachment.fileType,
+            fileSize: fileAttachment.fileSize,
+            url: fileAttachment.url || `/chat/download/${fileAttachment.fileName}`
+          };
+        }
+
+        group.messages.push(messageObj);
         await group.save();
 
         // Get the latest message with populated sender
@@ -534,16 +553,28 @@ io.on('connection', (socket) => {
         });
       } else {
         // Handle 1:1 message
-        const msg = new Message({ from: userId, to, content });
+        const msgObj = { from: userId, to, content: safeContent };
+        if (fileAttachment) {
+          msgObj.file = {
+            fileName: fileAttachment.fileName,
+            originalName: fileAttachment.originalName,
+            fileType: fileAttachment.fileType,
+            fileSize: fileAttachment.fileSize,
+            url: fileAttachment.url || `/chat/download/${fileAttachment.fileName}`
+          };
+        }
+
+        const msg = new Message(msgObj);
         await msg.save();
 
         const room = [userId.toString(), to.toString()].sort().join('_');
-        // Emit to room so both participants get it
+        // Emit to room so both participants get it (include file metadata)
         io.to(room).emit('new_message', {
           _id: msg._id,
           from: msg.from,
           to: msg.to,
           content: msg.content,
+          file: msg.file,
           createdAt: msg.createdAt
         });
       }

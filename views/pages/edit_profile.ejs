@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
 
 <head>
@@ -6,30 +6,75 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <title>Edit Profile</title>
+
+    <style>
+        .animate-fadeIn {
+            animation: fadeIn 1s ease-out;
+        }
+
+        .animate-slideUp {
+            animation: slideUp 0.7s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Utility for staggered animation */
+        .animated-item {
+            opacity: 0;
+            animation-fill-mode: both;
+            /* Retain final state */
+        }
+    </style>
 </head>
 
 <body class="bg-[#5E6572] min-h-screen flex items-center justify-center p-4">
-    <div class="w-full max-w-2xl bg-[#7D98A1] rounded-3xl p-6">
-        <h1 class="text-2xl font-bold mb-7 text-center">Edit Profile</h1>
+    <div class="w-full max-w-2xl bg-[#7D98A1] rounded-3xl p-6 shadow-2xl animate-fadeIn">
+        <h1 class="text-2xl font-bold mb-7 text-center text-white">Edit Profile</h1>
 
-        <% if (typeof error !== 'undefined' && error) { %>
-            <div class="bg-red-200 text-red-800 p-3 rounded mb-4"><%= error %></div>
+        <% if (typeof error !=='undefined' && error) { %>
+            <div class="bg-red-200 text-red-800 p-3 rounded mb-4 animated-item" style="animation-delay: 0.2s; animation: slideUp 0.5s ease-out 0.2s forwards;">
+                <%= error %>
+            </div>
         <% } %>
 
         <form action="/update_profile" method="POST" enctype="multipart/form-data" class="space-y-4">
-            <div class="flex gap-4 items-center justify-center">
-                <div class="relative group">
-                    <div class="w-[20vh] h-[20vh] rounded-full bg-white overflow-hidden">
-                        <img id="profilePreview" src="<%= user_info.profile_picture || '/images/profile_pictures/default.jpg' %>"
+            <div class="flex gap-4 items-center justify-center animated-item" style="animation-delay: 0.4s; animation: slideUp 0.5s ease-out 0.4s forwards;">
+                <div class="relative group transform hover:scale-[1.02] transition-transform duration-300">
+                    <div class="w-[20vh] h-[20vh] rounded-full bg-white overflow-hidden shadow-lg ring-4 ring-white/50">
+                        <img id="profilePreview"
+                            src="<%= user_info.profile_picture || '/images/profile_pictures/default.jpg' %>"
                             alt="profile" class="object-cover w-full h-full" />
                     </div>
-                    <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button type="button" onclick="document.getElementById('profileImage').click()" 
-                            class="bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                    <div
+                        class="absolute inset-0 flex items-center justify-center bg-black/30 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer">
+                        <button type="button" onclick="document.getElementById('profileImage').click()"
+                            class="bg-black/60 text-white p-3 rounded-full hover:bg-black/80 transition-colors shadow-xl">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                             </svg>
                         </button>
                     </div>
@@ -39,11 +84,11 @@
 
             <script>
                 // Handle profile image preview
-                document.getElementById('profileImage').addEventListener('change', function(e) {
+                document.getElementById('profileImage').addEventListener('change', function (e) {
                     const file = e.target.files[0];
                     if (file) {
                         const reader = new FileReader();
-                        reader.onload = function(e) {
+                        reader.onload = function (e) {
                             document.getElementById('profilePreview').src = e.target.result;
                         }
                         reader.readAsDataURL(file);
@@ -51,21 +96,25 @@
                 });
             </script>
 
-            <div class="bg-[#A9B4C2] rounded-3xl p-4">
-                <label class="block text-xl font-bold mb-1 ">Username</label>
-                <input name="username" type="text" class="font-medium mt-2 ml-4" value="<%= user_info.username %>"
-                    class="w-full p-2 rounded-2xl outline-none" required />
+            <div class="bg-[#A9B4C2] rounded-3xl p-4 animated-item" style="animation-delay: 0.6s; animation: slideUp 0.5s ease-out 0.6s forwards;">
+                <label class="block text-xl font-bold mb-1 text-gray-800">Username</label>
+                <input name="username" type="text"
+                    value="<%= user_info.username %>"
+                    class="w-full p-3 rounded-xl outline-none border-none focus:ring-2 focus:ring-blue-400 transition-shadow duration-200"
+                    required />
             </div>
 
-            <div class="bg-[#A9B4C2] rounded-3xl p-4">
-                <label class="block text-xl font-bold mb-1">Bio</label>
-                <textarea name="bio" rows="4"
-                    class="w-full p-2 rounded-2xl outline-none"><%= user_info.bio || '' %></textarea>
+            <div class="bg-[#A9B4C2] rounded-3xl p-4 animated-item" style="animation-delay: 0.8s; animation: slideUp 0.5s ease-out 0.8s forwards;">
+                <label class="block text-xl font-bold mb-1 text-gray-800">Bio</label>
+                <textarea name="bio" rows="4" placeholder="Tell us about yourself..."
+                    class="w-full p-3 rounded-xl outline-none border-none focus:ring-2 focus:ring-blue-400 transition-shadow duration-200 resize-none"><%= user_info.bio || '' %></textarea>
             </div>
 
-            <div class="flex items-center gap-3">
-                <button type="submit" class="bg-blue-500 text-white py-3 px-5 rounded-full hover:bg-blue-700 cursor-pointer">Save</button>
-                <a href="/profile" class="text-sm text-gray-800 underline hover:font-bold cursor-pointer">Cancel</a>
+            <div class="flex items-center gap-5 pt-2 animated-item" style="animation-delay: 1s; animation: slideUp 0.5s ease-out 1s forwards;">
+                <button type="submit"
+                    class="bg-blue-600 text-white font-semibold py-3 px-6 rounded-full hover:bg-blue-700 transition-colors shadow-lg">Save Changes</button>
+                <a href="/profile"
+                    class="text-lg text-gray-800 underline hover:font-bold hover:text-red-600 transition-all duration-200">Cancel</a>
             </div>
         </form>
 

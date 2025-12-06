@@ -1,0 +1,106 @@
+/* Clean, minimal styles for the Home page */
+:root{
+  --bg:#f4f7fb;
+  --panel:#ffffff;
+  --muted:#6b7280;
+  --accent:#2563eb;
+  --accent-2:#1e293b;
+  --glass: rgba(255,255,255,0.6);
+}
+html,body{height:100%;}
+body{
+  background:var(--bg);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  color:#0f172a;
+}
+/* Top bar */
+#topBar{
+  background: linear-gradient(90deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid rgba(15,23,42,0.04);
+  box-shadow: 0 6px 18px rgba(12,20,30,0.06);
+  height:64px !important;
+  align-items:center;
+}
+#topBar img{display:block}
+#topBar h1{color:var(--accent-2);font-weight:600}
+
+/* Left sidebar */
+aside[aria-hidden="false"], aside{
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+  border-right:1px solid rgba(12,20,30,0.04);
+}
+.friend-item{
+  background:transparent !important;
+  border-radius:12px !important;
+  padding:10px !important;
+  transition:background .15s ease, transform .12s ease;
+}
+.friend-item:hover{background:rgba(37,99,235,0.06);transform:translateY(-1px)}
+
+/* Chat box */
+#chatbotSection{background:transparent;border-left:1px solid rgba(12,20,30,0.04);display:flex;flex-direction:column}
+#chatbotSection > div:first-child{height:64px}
+#chatbotMessagesContainer{background:linear-gradient(180deg,#ffffff,#f8fafc);padding:12px}
+#chatbotMessages{display:flex;flex-direction:column;gap:10px}
+
+/* Message bubbles */
+.message-bubble{max-width:82%;padding:10px 14px;border-radius:14px;line-height:1.35;box-shadow:0 6px 18px rgba(2,6,23,0.05);}
+.self-start .message-bubble{background:linear-gradient(180deg,#eef2ff,#e0e7ff);color:#0f172a;border-top-left-radius:6px;border-top-right-radius:14px;border-bottom-right-radius:14px;border-bottom-left-radius:14px;}
+.self-end{align-self:flex-end}
+.self-end .message-bubble{background:linear-gradient(180deg,#2563eb,#1e40af);color:#fff;border-top-right-radius:6px;border-top-left-radius:14px;border-bottom-left-radius:14px;border-bottom-right-radius:14px}
+
+/* Friend messages (generic left) */
+.friend-message{display:flex;gap:8px;align-items:flex-start}
+.friend-message img{width:36px;height:36px;border-radius:999px;object-fit:cover}
+.friend-meta{font-size:0.75rem;color:var(--muted);margin-top:4px}
+
+/* Assistant specific styling */
+.assistant-bubble{background:linear-gradient(180deg,#f8fafc,#eef2ff);border:1px solid rgba(37,99,235,0.06)}
+.assistant-bubble p{margin:0}
+
+/* Chat messages container tweaks */
+#messagesContainer{padding:18px}
+#messagesInner{display:flex;flex-direction:column;gap:12px}
+
+/* Composer */
+#composer{display:flex;align-items:center;gap:12px;padding:12px 16px}
+#composerAvatar img{width:38px;height:38px;border-radius:999px}
+#composer .flex-1{display:flex;flex-direction:column}
+#filePreview{left:8px;right:8px}
+
+/* File chooser inside chatbot */
+#chatbotSection .flex.items-center{gap:8px}
+#chooseDocBtn, #summarizeDocBtn{border-radius:8px;padding:8px 10px;font-size:0.9rem}
+
+/* Timestamps */
+.msg-time{font-size:0.72rem;color:var(--muted);margin-top:6px}
+
+/* Scrollbar polish */
+#messagesContainer::-webkit-scrollbar, #chatbotMessagesContainer::-webkit-scrollbar{height:8px;width:8px}
+#messagesContainer::-webkit-scrollbar-thumb, #chatbotMessagesContainer::-webkit-scrollbar-thumb{background:rgba(2,6,23,0.06);border-radius:6px}
+#messageInput{background:#fff;padding:12px;border-radius:12px;border:1px solid rgba(15,23,42,0.06);}
+#sendBtn{background:var(--accent);}
+#sendBtn:hover{background:#1d4ed8}
+#attachBtn{background:transparent;border:1px solid rgba(15,23,42,0.04)}
+
+/* Chatbot */
+#chatbotSection{background:transparent;border-left:1px solid rgba(12,20,30,0.04)}
+/* Chatbot header height override */
+#chatbotSection > div:first-child{height:64px}
+#chatbotMessagesContainer{background:linear-gradient(180deg,#ffffff,#f8fafc);}
+#chatbotInput{background:#fff;padding:10px;border-radius:10px;border:1px solid rgba(15,23,42,0.06);color:var(--accent-2)}
+#chatbotSendBtn{background:var(--accent)}
+#chatbotSendBtn:hover{background:#1d4ed8}
+
+/* Buttons */
+button{font-weight:600}
+
+/* File chooser small text */
+#chosenDocName{font-size:0.85rem;color:var(--muted)}
+
+/* Responsive tweaks */
+@media (max-width:900px){
+  #topBar{border-radius:0;height:56px}
+  aside{display:none}
+  #chatbotSection{display:none}
+}

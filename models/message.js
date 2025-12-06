@@ -1,18 +1,18 @@
 const mongoose = require('mongoose');
 
-const messageSchema = new mongoose.Schema({
+const MessageSchema = new mongoose.Schema({
   from: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  to: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  content: { type: String, required: true },
+  to: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  content: String,
   createdAt: { type: Date, default: Date.now },
   read: { type: Boolean, default: false },
-  fileAttachment: {
-    originalName: String,
+  file: {
     fileName: String,
+    originalName: String,
     fileType: String,
-    filePath: String,
-    fileSize: Number
+    fileSize: Number,
+    url: String
   }
 });
 
-module.exports = mongoose.model('Message', messageSchema);
+module.exports = mongoose.model('Message', MessageSchema);
