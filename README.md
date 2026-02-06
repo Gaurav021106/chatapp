@@ -1,341 +1,138 @@
-# ChatApp - AI-Powered Real-Time Chat Application
+# AI Exam Monitor System - Intelligent Online Proctoring Solution
 
 [![GitHub license](https://img.shields.io/badge/license-ISC-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-v16+-green)](https://nodejs.org/)
-[![MongoDB](https://img.shields.io/badge/MongoDB-4.4+-green)](https://www.mongodb.com/)
+[![Python](https://img.shields.io/badge/Python-3.10+-blue)](https://www.python.org/)
+[![TensorFlow](https://img.shields.io/badge/TensorFlow-2.x-orange)](https://www.tensorflow.org/)
 
 ## 📋 Overview
 
-ChatApp is a modern, full-featured real-time chat application built with **Node.js**, **Express.js**, and **MongoDB**. It provides seamless communication with advanced features including private messaging, group chats, file sharing, and integrated AI bot assistance. Perfect for building collaborative communication platforms.
+The **AI Exam Monitor System** is a sophisticated, real-time online proctoring solution designed to maintain academic integrity in remote examination environments. By leveraging **Artificial Intelligence**, **Computer Vision**, and **Deep Learning**, the system automatically detects suspicious behaviors, reducing the need for continuous manual invigilation while providing a scalable and secure assessment platform.
 
 ## ✨ Key Features
 
-### Core Messaging
-- ✅ **Real-time Private Messaging** - Instant message delivery with Socket.IO
-- ✅ **Group Chat Functionality** - Create and manage group conversations
-- ✅ **Message History** - Persistent message storage and retrieval
-- ✅ **Typing Indicators** - See when users are typing
-- ✅ **Message Search** - Find past conversations quickly
+### 🤖 Intelligent Monitoring
+- ✅ **Face Detection & Tracking** - Continuous verification of candidate presence
+- ✅ **Multiple Face Detection** - Alerts when extra persons are in the frame
+- ✅ **Head Pose Estimation** - Detects abnormal head movements (looking away from screen)
+- ✅ **Gaze Direction Analysis** - Monitors screen focus (via facial landmarks)
+- ✅ **Object Detection** - Identifies prohibited items like mobile phones and books
 
-### User Management
-- ✅ **User Authentication** - Secure login/signup with JWT
-- ✅ **User Profile Management** - Customizable user profiles
-- ✅ **Friend Request System** - Connect with other users
-- ✅ **Online Status Indicators** - Real-time presence tracking
-- ✅ **User Blocking** - Privacy control features
+### 💻 System Security
+- ✅ **Tab-Switch Detection** - Detects if the candidate navigates away from the exam tab
+- ✅ **Real-time Violation Alerts** - Instant logging of suspicious activities
+- ✅ **Browser Focus Monitoring** - Ensures the exam window remains active
+- ✅ **Secure Authentication** - JWT-based candidate login
 
-### Advanced Features
-- ✅ **File Sharing Support** - Share documents, images, and media
-- ✅ **AI Bot Integration** - Chat with an intelligent assistant
-- ✅ **Responsive Design** - Mobile-friendly interface
-- ✅ **Dark Mode** - Eye-friendly theme option
-- ✅ **Notification System** - Real-time push notifications
+### 📊 Admin & Reporting
+- ✅ **Violation Logs** - Detailed history of all flagged events with timestamps
+- ✅ **Live Status Dashboard** - Real-time monitoring of all active examinees
+- ✅ **Post-Exam Reports** - Comprehensive analysis of candidate behavior
 
 ## 🛠️ Technology Stack
 
-### Backend
-- **Node.js** - JavaScript runtime
-- **Express.js** - Web application framework
-- **MongoDB** - NoSQL database
-- **Socket.IO** - Real-time bidirectional communication
-- **JWT** - Authentication and authorization
-
 ### Frontend
-- **EJS** - Templating engine
-- **TailwindCSS** - Utility-first CSS framework
-- **HTML5 & CSS3** - Markup and styling
-- **JavaScript (ES6+)** - Client-side interactivity
+- **HTML5, CSS3, JavaScript** - Core web technologies
+- **React.js** - For state management and dynamic UI
+- **WebRTC** - For real-time camera stream acquisition
 
-### Additional Libraries
-- **Bcryptjs** - Password hashing
-- **Dotenv** - Environment variable management
-- **Multer** - File upload handling
-- **Cors** - Cross-origin resource sharing
+### Backend (Python AI Engine)
+- **Python 3.10** - Primary analytical engine
+- **Flask / FastAPI** - Web framework for AI service
+- **OpenCV** - Image processing and frame sampling
+- **TensorFlow / Keras** - CNN implementation for behavior classification
+- **MediaPipe** - High-performance facial landmark detection (468 landmarks)
 
-## 📦 Prerequisites
+### Data & Communication
+- **WebSockets** - For low-latency, real-time data transmission
+- **REST APIs** - For periodic logging and reporting
+- **SQLite / MongoDB** - Scalable storage for logs and session data
 
-Before you begin, ensure you have installed:
-- **Node.js** (v14 or higher) - [Download](https://nodejs.org/)
-- **MongoDB** (v4.4 or higher) - [Download](https://www.mongodb.com/try/download/community)
-- **npm** (comes with Node.js)
-- **Git** - For version control
+## ⚙️ System Architecture & Workflow
+
+The system follows a modular, distributed architecture:
+
+1.  **Phase 1: Client-Side Capture**
+    - Accesses webcam via browser APIs.
+    - Samples frames every 500ms to optimize bandwidth.
+    - Extracts frame data using a hidden HTML5 canvas.
+
+2.  **Phase 2: Data Transmission**
+    - Encodes frames into Base64/Blobs.
+    - Transmits data to the Python backend via WebSockets.
+
+3.  **Phase 3: AI Inference Engine**
+    - Preprocesses frames (resizing, normalization).
+    - Runs Detection Stack (Face Mesh + Object Detection).
+    - Calculates violation probability ($P > 0.85$ flags high-risk events).
+
+4.  **Phase 4: Logging & Admin Review**
+    - Stores violation snapshots and metadata.
+    - Provides real-time alerts to invigilators.
 
 ## 🚀 Installation & Setup
 
-### Step 1: Clone the Repository
+### Prerequisites
+- Node.js (v16+)
+- Python (3.10+)
+- MongoDB (running locally or Atlas)
 
+### Step 1: Clone & Install Frontend
 ```bash
 git clone https://github.com/Gaurav021106/chatapp.git
 cd chatapp
-```
-
-### Step 2: Install Dependencies
-
-```bash
 npm install
 ```
 
+### Step 2: Set up Python Environment
+```bash
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # or venv\Scripts\activate on Windows
+pip install opencv-python tensorflow mediapipe flask flask-socketio
+```
+
 ### Step 3: Environment Configuration
-
-Create a `.env` file in the root directory:
-
+Create a `.env` file in the root:
 ```env
-# Server Configuration
 PORT=2000
-NODE_ENV=development
-
-# Database Configuration
-MONGODB_URI=mongodb://localhost:27017/chatappDB
-
-# Authentication
-JWT_SECRET=your_super_secret_jwt_key_change_this_in_production
-JWT_EXPIRE=7d
-
-# File Upload
-MAX_FILE_SIZE=50mb
-UPLOAD_PATH=./public/uploads
-
-# AI Bot Configuration (Optional)
-AI_BOT_API_KEY=your_ai_api_key_here
+MONGODB_URI=mongodb://localhost:27017/examMonitorDB
+JWT_SECRET=your_secret_key
+AI_THRESHOLD=0.85
 ```
 
-### Step 4: Start MongoDB
-
-**For Local MongoDB:**
+### Step 4: Run Application
 ```bash
-mongod
-```
+# Start backend (Python)
+python app_ai.py
 
-**For MongoDB Atlas (Cloud):**
-Update `MONGODB_URI` in `.env` with your Atlas connection string.
-
-### Step 5: Run the Application
-
-**Development Mode (with auto-reload):**
-```bash
+# Start frontend (Node.js)
 npm run dev
 ```
 
-**Production Mode:**
-```bash
-npm start
-```
+## 📈 Results & Performance
+The system has demonstrated high accuracy in:
+- Detecting face absence and extra persons.
+- Identifying abnormal head turns and screen focus loss.
+- Flagging tab-switching events instantly.
 
-The application will be available at: `http://localhost:2000`
-
-## 📂 Project Structure
-
-```
-chatapp/
-├── config/
-│   ├── database.js          # MongoDB connection
-│   └── passport.js          # Authentication config
-├── middleware/
-│   ├── auth.js              # JWT authentication
-│   ├── upload.js            # File upload handler
-│   └── errorHandler.js      # Error handling
-├── models/
-│   ├── User.js              # User schema
-│   ├── Message.js           # Message schema
-│   ├── Group.js             # Group chat schema
-│   └── Bot.js               # AI bot schema
-├── routes/
-│   ├── auth.js              # Authentication routes
-│   ├── chat.js              # Chat routes
-│   ├── groups.js            # Group routes
-│   ├── users.js             # User management routes
-│   └── bot.js               # AI bot routes
-├── views/
-│   ├── layouts/             # Layout templates
-│   ├── auth/                # Authentication pages
-│   │   ├── login.ejs
-│   │   └── signup.ejs
-│   ├── pages/               # Application pages
-│   │   ├── dashboard.ejs
-│   │   ├── chat.ejs
-│   │   ├── profile.ejs
-│   │   └── groups.ejs
-│   └── partials/            # Reusable components
-├── public/
-│   ├── css/                 # Stylesheets
-│   ├── js/                  # Client-side scripts
-│   ├── images/              # Static images
-│   └── uploads/             # User uploads
-├── scripts/
-│   └── seed.js              # Database seeding
-├── app.js                   # Express app setup
-├── server.js                # Server entry point
-├── package.json             # Dependencies
-├── .env.example             # Environment variables template
-└── README.md                # Documentation
-```
-
-## 🔐 Authentication
-
-The application uses **JWT (JSON Web Tokens)** for secure authentication:
-
-1. User registers/logs in with credentials
-2. Server validates and issues JWT token
-3. Token stored in secure HTTP-only cookie
-4. Token required for protected routes
-5. Token auto-refreshed on expiry
-
-## 🚀 Deployment
-
-### Deploy to Render
-
-1. Push code to GitHub
-2. Connect repository to [Render](https://render.com/)
-3. Set environment variables in Render dashboard
-4. Deploy automatically on push
-
-### Deploy to Heroku
-
-```bash
-# Install Heroku CLI
-heroku login
-heroku create your-app-name
-git push heroku main
-heroku config:set PORT=2000
-```
-
-### Deploy to DigitalOcean
-
-1. Create Droplet (Ubuntu 20.04)
-2. Install Node.js and MongoDB
-3. Clone repository
-4. Set up environment variables
-5. Use PM2 for process management
-6. Configure Nginx as reverse proxy
-
-## 📚 API Documentation
-
-### Authentication Endpoints
-
-```
-POST   /api/auth/signup      - Register new user
-POST   /api/auth/login       - User login
-POST   /api/auth/logout      - User logout
-GET    /api/auth/me          - Get current user
-POST   /api/auth/refresh     - Refresh token
-```
-
-### Chat Endpoints
-
-```
-GET    /api/chat/messages    - Get chat history
-POST   /api/chat/send        - Send message
-GET    /api/chat/conversations - Get all chats
-DELETE /api/chat/:id         - Delete message
-```
-
-### Group Endpoints
-
-```
-GET    /api/groups           - Get user groups
-POST   /api/groups           - Create group
-PUT    /api/groups/:id       - Update group
-DELETE /api/groups/:id       - Delete group
-```
-
-## 🤖 AI Bot Integration
-
-ChatApp includes an integrated AI bot that:
-- Answers user questions
-- Provides chat suggestions
-- Assists with content moderation
-- Learns from conversations
-
-## 🧪 Testing
-
-```bash
-# Run tests
-npm test
-
-# Run tests with coverage
-npm run test:coverage
-
-# Run linting
-npm run lint
-```
-
-## 🐛 Known Issues & Limitations
-
-- Maximum file upload size: 50MB
-- Typing indicator works within 100m radius
-- Group chats support up to 500 members
-- Message history retention: 1 year
+*Note: Performance may vary based on lighting conditions and camera resolution.*
 
 ## 🔄 Future Enhancements
+- [ ] **Eye-Tracking & Gaze Estimation** for pinpoint focus detection.
+- [ ] **Audio Monitoring** to detect verbal communication.
+- [ ] **Emotion Detection** for stress level analysis.
+- [ ] **Cloud Scalability** for handling thousands of concurrent users.
+- [ ] **LMS Integration** (Moodle, Canvas, etc.).
 
-- [ ] Video/Audio calling capability
-- [ ] End-to-end encryption
-- [ ] Message reactions and emojis
-- [ ] Channel/room system
-- [ ] Message threading
-- [ ] Advanced search with filters
-- [ ] Mobile app (React Native)
-- [ ] Voice messages
-- [ ] Screen sharing
-- [ ] Integration with third-party services
-
-## 📝 Contributing
-
-Contributions are welcome! Please follow these steps:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit changes (`git commit -m 'Add AmazingFeature'`)
-4. Push to branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## 📋 Code Standards
-
-- Use ES6+ syntax
-- Follow ESLint configuration
-- Add comments for complex logic
-- Write meaningful commit messages
-- Test new features before submitting PR
+## 👨‍💻 Contributors
+- **Deepanshu Joshi** (D1 - 20)
+- **Anshul Bora** (D1 - 12)
+- **Yuvraj Satyal** (F2 - 79)
+- *Guided by:* **Ms. Harshita Sinha** (School of Computing, GEHU)
 
 ## 📄 License
-
-This project is licensed under the **ISC License** - see the [LICENSE](LICENSE) file for details.
-
-## 👨‍💻 Author
-
-**Gaurav Saklani** ([@Gaurav021106](https://github.com/Gaurav021106))
-
-- 🔗 [GitHub Profile](https://github.com/Gaurav021106)
-- 💼 [LinkedIn](https://linkedin.com/in/gaurav-saklani)
-
-## 🙏 Acknowledgments
-
-- Socket.IO for real-time communication
-- MongoDB for reliable data storage
-- Express.js community for excellent documentation
-- Contributors and users for feedback
-
-## 📞 Support & Contact
-
-- 📧 Email: support@chatapp.com
-- 🐛 [Report Issues](https://github.com/Gaurav021106/chatapp/issues)
-- 💬 [Discussions](https://github.com/Gaurav021106/chatapp/discussions)
-- 📖 [Documentation Wiki](https://github.com/Gaurav021106/chatapp/wiki)
-
-## 📊 Project Stats
-
-- **Stars:** ⭐ Growing
-- **Active Development:** ✅ Yes
-- **Last Updated:** February 2026
-- **Node.js Version:** v16+
-- **Status:** Production Ready
+Licensed under the ISC License.
 
 ---
-
-<div align="center">
-
-**[⬆ back to top](#chatapp---ai-powered-real-time-chat-application)**
-
-Made with ❤️ by Gaurav Saklani
-
-</div>
+Made with ❤️ by the Project Team at Graphic Era Hill University.
