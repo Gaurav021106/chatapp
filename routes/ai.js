@@ -101,8 +101,6 @@ router.post('/summarize/document', authenticateToken, upload.single('file'), asy
 });
 
 module.exports = router;
-
-// Chat with OpenAI (ChatGPT)
 router.post('/chat', authenticateToken, async (req, res) => {
   try {
     const { message } = req.body || {};
@@ -284,3 +282,5 @@ router.post('/summarize/chat-ai', authenticateToken, async (req, res) => {
     return res.status(500).json({ success:false, message:'Error contacting OpenAI' });
   }
 });
+
+module.exports = router;

@@ -1,3 +1,1 @@
-// config/jwt.js
-const JWTSECRET = process.env.JWTSECRET || 'devsecret123';
-module.exports = JWTSECRET;
+module.exports = process.env.JWTSECRET || 'heyBuddy_secret_key_123';

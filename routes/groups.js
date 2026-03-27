@@ -15,11 +15,16 @@ router.post('/create', authenticateToken, groupUpload.single('groupImage'), asyn
       if (req.file) fs.unlinkSync(req.file.path);
       return res.status(400).json({ success: false, message: 'Name and at least one member are required.' });
     }
+    // Normalize user IDs to strings for comparison and storage
+    const memberSet = new Set();
+    members.forEach(m => memberSet.add(m.toString()));
+    memberSet.add(req.user._id.toString());
+    
     const groupData = {
       name,
       description,
       creator: req.user._id,
-      members: [...new Set([...members, req.user._id.toString()])]
+      members: Array.from(memberSet)
     };
     if (req.file) groupData.group_picture = '/images/group_pictures/' + req.file.filename;
     const group = new Group(groupData);
@@ -78,9 +83,12 @@ router.post('/:id/update', authenticateToken, groupUpload.single('groupImage'), 
       group.group_picture = '/images/group_pictures/' + req.file.filename;
     }
     if (members) {
-      let newMembers = Array.isArray(members) ? members : [members];
-      if (!newMembers.includes(group.creator.toString())) newMembers.push(group.creator.toString());
-      group.members = newMembers;
+      // Normalize member IDs to ensure consistency
+      const memberSet = new Set();
+      const memberArray = Array.isArray(members) ? members : [members];
+      memberArray.forEach(m => memberSet.add(m.toString()));
+      memberSet.add(group.creator.toString());
+      group.members = Array.from(memberSet);
     }
     await group.save();
     res.json({ success: true, group });
@@ -119,7 +127,10 @@ router.post('/:id/add-member', authenticateToken, async (req, res) => {
 
     const userId = req.body.userId;
     if (!userId) return res.status(400).json({ success: false, message: 'User ID required.' });
-    if (!group.members.map(String).includes(userId)) group.members.push(userId);
+    
+    // Normalize IDs for comparison
+    const isMember = group.members.some(id => id.toString() === userId.toString());
+    if (!isMember) group.members.push(userId);
 
     await group.save();
     res.json({ success: true });

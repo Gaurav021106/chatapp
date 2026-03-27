@@ -121,15 +121,11 @@
                         <a href="/home?chat=<%= friend._id %>" class="block">
                             <div
                                 class="friend-item p-2 border-b border-gray-300 mt-1 rounded-xl flex items-center gap-3 hover:bg-gray-100 transition-colors cursor-pointer"
-                                data-username="<%= friend.username.toLowerCase() %>">
+                                data-username="<%= friend.username.toLowerCase() %>" data-user-id="<%= friend._id %>">
                                 <img class="w-8 h-8 rounded-full object-cover" src="<%= friend.profile_picture %>"
                                     alt="">
                                 <p class="font-bold text-gray-800"><%= friend.username %></p>
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-auto text-blue-500" fill="none"
-                                    viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                                </svg>
+                                <span class="friend-status-badge ml-auto text-xs font-semibold px-2 py-1 rounded-full bg-gray-300 text-gray-700">Offline</span>
                             </div>
                         </a>
                         <% }); %>
@@ -190,9 +186,10 @@
                         <% if (user._id.toString() !== user_info._id.toString()) { %>
                             <div
                                 class="user-item p-2 border-b border-gray-300 mt-1 rounded-xl transition duration-300 ease-in-out flex items-center gap-3 hover:bg-gray-200 cursor-pointer"
-                                data-username="<%= user.username.toLowerCase() %>">
+                                data-username="<%= user.username.toLowerCase() %>" data-user-id="<%= user._id %>">
                                 <img class="w-8 h-8 rounded-full object-cover" src="<%= user.profile_picture %>" alt="">
                                 <p class="font-bold text-gray-800"><%= user.username %></p>
+                                <span class="user-status-badge text-xs font-semibold px-2 py-1 rounded-full bg-gray-300 text-gray-700">Offline</span>
 
                                 <% 
                                 // Check relationship status
@@ -323,7 +320,7 @@
                         requestItem.style.transition = 'opacity 0.3s ease-out';
                     }
 
-                    fetch('/accept-friend-request', {
+                    fetch('/accept-friend', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ userId: btn.dataset.userId })
@@ -348,7 +345,7 @@
             document.querySelectorAll('.decline-request-btn').forEach(function (btn) {
                 btn.addEventListener('click', function (e) {
                     const requestItem = btn.closest('.request-item');
-                    fetch('/decline-friend-request', {
+                    fetch('/reject-friend', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ userId: btn.dataset.userId })
@@ -404,6 +401,39 @@
                     filterItems(this, '.user-item');
                 }, 200));
             }
+
+            async function refreshOnlineStatus() {
+                try {
+                    const res = await fetch('/online-status');
+                    if (!res.ok) return;
+                    const data = await res.json();
+                    if (!data.success) return;
+
+                    const onlineSet = new Set(data.onlineUserIds.map(id => id.toString()));
+
+                    document.querySelectorAll('[data-user-id]').forEach(el => {
+                        const uid = el.getAttribute('data-user-id');
+                        if (!uid) return;
+                        let badge = el.querySelector('.friend-status-badge, .user-status-badge');
+                        if (!badge) return;
+                        if (onlineSet.has(uid)) {
+                            badge.textContent = 'Online';
+                            badge.classList.remove('bg-gray-300', 'text-gray-700');
+                            badge.classList.add('bg-green-500', 'text-white');
+                        } else {
+                            badge.textContent = 'Offline';
+                            badge.classList.remove('bg-green-500', 'text-white');
+                            badge.classList.add('bg-gray-300', 'text-gray-700');
+                        }
+                    });
+                } catch (err) {
+                    console.error('Online status refresh failed:', err);
+                }
+            }
+
+            // Initialize status and poll every 10 seconds
+            refreshOnlineStatus();
+            setInterval(refreshOnlineStatus, 10000);
         });
     </script>
 </body>

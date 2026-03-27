@@ -57,12 +57,12 @@
             </div>
         <% } %>
 
-        <form action="/update_profile" method="POST" enctype="multipart/form-data" class="space-y-4">
+        <form action="/edit_profile" method="POST" enctype="multipart/form-data" class="space-y-4">
             <div class="flex gap-4 items-center justify-center animated-item" style="animation-delay: 0.4s; animation: slideUp 0.5s ease-out 0.4s forwards;">
                 <div class="relative group transform hover:scale-[1.02] transition-transform duration-300">
                     <div class="w-[20vh] h-[20vh] rounded-full bg-white overflow-hidden shadow-lg ring-4 ring-white/50">
                         <img id="profilePreview"
-                            src="<%= user_info.profile_picture || '/images/profile_pictures/default.jpg' %>"
+                            src="<%= user.profile_picture || '/images/profile_pictures/default.jpg' %>"
                             alt="profile" class="object-cover w-full h-full" />
                     </div>
                     <div
@@ -99,7 +99,7 @@
             <div class="bg-[#A9B4C2] rounded-3xl p-4 animated-item" style="animation-delay: 0.6s; animation: slideUp 0.5s ease-out 0.6s forwards;">
                 <label class="block text-xl font-bold mb-1 text-gray-800">Username</label>
                 <input name="username" type="text"
-                    value="<%= user_info.username %>"
+                    value="<%= user.username %>"
                     class="w-full p-3 rounded-xl outline-none border-none focus:ring-2 focus:ring-blue-400 transition-shadow duration-200"
                     required />
             </div>
@@ -107,7 +107,7 @@
             <div class="bg-[#A9B4C2] rounded-3xl p-4 animated-item" style="animation-delay: 0.8s; animation: slideUp 0.5s ease-out 0.8s forwards;">
                 <label class="block text-xl font-bold mb-1 text-gray-800">Bio</label>
                 <textarea name="bio" rows="4" placeholder="Tell us about yourself..."
-                    class="w-full p-3 rounded-xl outline-none border-none focus:ring-2 focus:ring-blue-400 transition-shadow duration-200 resize-none"><%= user_info.bio || '' %></textarea>
+                    class="w-full p-3 rounded-xl outline-none border-none focus:ring-2 focus:ring-blue-400 transition-shadow duration-200 resize-none"><%= user.bio || '' %></textarea>
             </div>
 
             <div class="flex items-center gap-5 pt-2 animated-item" style="animation-delay: 1s; animation: slideUp 0.5s ease-out 1s forwards;">
