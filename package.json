@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "A real-time chat application with file sharing and group chat capabilities",
   "main": "app.js",
+  
   "scripts": {
     "start": "node app.js",
     "dev": "nodemon app.js",
@@ -17,6 +18,9 @@
   "author": "Gaurav021106",
   "license": "ISC",
   "type": "commonjs",
+  "engines": {
+    "node": "18.x"
+  },
   "dependencies": {
     "@tailwindcss/browser": "^4.1.16",
     "bcrypt": "^6.0.0",

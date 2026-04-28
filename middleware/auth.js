@@ -1,33 +1,32 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
-const JWTSECRET = require('../config/jwt');
 
-module.exports = async (req, res, next) => {
-  const token = req.cookies.token;
-  if (!token) {
-    // Check if this is an API request or page request
-    if (req.accepts('application/json')) {
-      return res.status(401).json({ success: false, message: 'Unauthorized' });
-    }
-    return res.redirect('/');
-  }
+const authenticateToken = async (req, res, next) => {
+    try {
+        const token = req.cookies.token;
+        
+        // If no token exists, send them back to login immediately
+        if (!token) {
+            return res.redirect('/login');
+        }
 
-  try {
-    const decoded = jwt.verify(token, JWTSECRET);
-    const user = await User.findById(decoded.id);
-    if (!user) {
-      if (req.accepts('application/json')) {
-        return res.status(401).json({ success: false, message: 'User not found' });
-      }
-      return res.redirect('/');
+        // Verify the token
+        const decoded = jwt.verify(token, process.env.JWTSECRET);
+        const user = await User.findById(decoded.id);
+
+        // If token is valid but user was deleted from database
+        if (!user) {
+            res.clearCookie('token');
+            return res.redirect('/login');
+        }
+
+        req.user = user;
+        next();
+    } catch (error) {
+        // If token is expired or tampered with
+        res.clearCookie('token');
+        return res.redirect('/login');
     }
-    req.user = user;
-    next();
-  } catch (err) {
-    res.clearCookie('token');
-    if (req.accepts('application/json')) {
-      return res.status(401).json({ success: false, message: 'Invalid token' });
-    }
-    res.redirect('/');
-  }
 };
+
+module.exports = authenticateToken;

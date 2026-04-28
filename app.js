@@ -1,4 +1,3 @@
-// Load environment variables
 require('dotenv').config();
 const express = require('express');
 const http = require('http');
@@ -7,28 +6,39 @@ const mongoose = require('mongoose');
 const cookieParser = require('cookie-parser');
 const jwt = require('jsonwebtoken');
 const { Server } = require('socket.io');
-const fs = require('fs');
 
 const User = require('./models/user');
 const Message = require('./models/message');
 const Group = require('./models/group');
-const JWTSECRET = require('./config/jwt');
 const authenticateToken = require('./middleware/auth');
 
 // Import Route Modules
 const groupRoutes = require('./routes/groups');
 const chatRoutes = require('./routes/chat');
 const aiRoutes = require('./routes/ai');
-const { profileUpload } = require('./middleware/upload');
+
+// Safely require upload middleware
+let profileUpload;
+try {
+  const uploadModule = require('./middleware/upload');
+  profileUpload = uploadModule.profileUpload || uploadModule;
+} catch (e) {
+  console.warn("Upload middleware not found, file uploads might fail.");
+}
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
+app.set('io', io);
 
 // 1. DATABASE CONNECTION
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/chatapp')
-  .then(() => console.log('Connected to MongoDB'))
-  .catch(err => console.error('MongoDB error:', err));
+const primaryDbUrl = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/chatapp';
+mongoose.connect(primaryDbUrl, { connectTimeoutMS: 10000 })
+  .then(() => console.log('Connected to MongoDB successfully!'))
+  .catch(err => {
+    console.error('MongoDB connection failed:', err.message);
+    process.exit(1);
+  });
 
 // 2. MIDDLEWARE & SETTINGS
 app.set('view engine', 'ejs');
@@ -43,59 +53,78 @@ app.use('/chat', chatRoutes);
 app.use('/groups', groupRoutes);
 app.use('/api', aiRoutes);
 
-// Auth Routes
-app.get('/', (req, res) => res.render('auth/login', { error: null }));
-app.get('/signup', (req, res) => res.render('auth/signup', { error: null }));
+// --- AUTHENTICATION ROUTES ---
 
-app.post('/create', async (req, res) => {
+app.get('/', (req, res) => res.redirect('/login'));
+app.get('/signup', (req, res) => res.render('auth/signup', { error: null }));
+app.get('/login', (req, res) => res.render('auth/login', { error: null }));
+
+// DIRECT SIGNUP POST
+app.post('/signup', async (req, res) => {
   try {
     const { username, password, email } = req.body;
     
-    // Input validation
     if (!username || !password || !email) {
       return res.render('auth/signup', { error: 'All fields are required' });
     }
-    if (username.length < 3) {
-      return res.render('auth/signup', { error: 'Username must be at least 3 characters' });
+
+    const existingUser = await User.findOne({ 
+      $or: [{ email: email.toLowerCase() }, { username: new RegExp('^' + username + '$', 'i') }] 
+    });
+
+    if (existingUser) {
+      return res.render('auth/signup', { error: 'Username or Email is already taken' });
     }
-    if (password.length < 6) {
-      return res.render('auth/signup', { error: 'Password must be at least 6 characters' });
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return res.render('auth/signup', { error: 'Invalid email format' });
-    }
-    
+
     const user = new User({ username, email, password });
-    await user.save();
-    const token = jwt.sign({ id: user._id }, JWTSECRET);
+    await user.save(); // Password hashes automatically in models/user.js
+
+    const token = jwt.sign({ id: user._id }, process.env.JWTSECRET, { expiresIn: '24h' });
     res.cookie('token', token, { httpOnly: true });
     res.redirect('/home');
+
   } catch (error) {
-    res.render('auth/signup', { error: error.message });
+    console.error(error);
+    res.render('auth/signup', { error: 'Error creating account. Please try again.' });
   }
 });
 
-app.post('/check', async (req, res) => {
+// DIRECT LOGIN POST
+app.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
     
-    // Input validation
     if (!username || !password) {
-      return res.render('auth/login', { error: 'Username and password are required' });
+      return res.render('auth/login', { error: 'Username/Email and password are required' });
     }
     
-    const user = await User.findByUsername(username);
+    const user = await User.findOne({
+      $or: [
+        { email: username.toLowerCase() },
+        { username: new RegExp('^' + username + '$', 'i') }
+      ]
+    });
+
     if (!user || !(await user.validatePassword(password))) {
       return res.render('auth/login', { error: 'Invalid credentials' });
     }
     
-    const token = jwt.sign({ id: user._id }, JWTSECRET);
+    const token = jwt.sign({ id: user._id }, process.env.JWTSECRET, { expiresIn: '24h' });
     res.cookie('token', token, { httpOnly: true });
     res.redirect('/home');
+
   } catch (error) {
+    console.error(error);
     res.render('auth/login', { error: 'An error occurred during login' });
   }
 });
+
+app.get('/logout', (req, res) => {
+  res.clearCookie('token');
+  res.redirect('/login');
+});
+
+// --- PROTECTED PAGES ---
 
 app.get('/home', authenticateToken, async (req, res) => {
   const user = await User.findById(req.user._id).populate('friends').lean();
@@ -103,299 +132,309 @@ app.get('/home', authenticateToken, async (req, res) => {
 });
 
 app.get('/profile', authenticateToken, async (req, res) => {
-  const user = await User.findById(req.user._id).populate('friends friend_requests').lean();
+  const user = await User.findById(req.user._id).populate('friends friend_requests friend_requests_sent').lean();
   const allUsers = await User.find({ _id: { $ne: req.user._id } }).limit(10).lean();
   res.render('pages/profile', { user_info: user, all_users: allUsers });
 });
 
-app.get('/messages/:friendId', authenticateToken, async (req, res) => {
+app.get('/messages/:userId', authenticateToken, async (req, res) => {
   try {
-    const userId = req.user._id.toString();
-    const friendId = req.params.friendId;
+    const otherUserId = req.params.userId;
+    if (!otherUserId) return res.status(400).json({ success: false, message: 'User ID is required' });
 
-    const friend = await User.findById(friendId);
-    if (!friend) return res.status(404).json({ success: false, message: 'Friend not found' });
+    const otherUser = await User.findById(otherUserId);
+    if (!otherUser) return res.status(404).json({ success: false, message: 'User not found' });
 
-    // Load all direct messages both ways
     const messages = await Message.find({
       $or: [
-        { from: userId, to: friendId },
-        { from: friendId, to: userId }
+        { from: req.user._id, to: otherUserId },
+        { from: otherUserId, to: req.user._id }
       ]
-    })
-      .sort({ createdAt: 1 })
-      .populate('from', 'username')
-      .populate('to', 'username')
-      .lean();
+    }).sort({ createdAt: 1 }).lean();
 
-    const formatted = messages.map(m => ({
-      ...m,
-      from_username: m.from ? m.from.username : '',
-      to_username: m.to ? m.to.username : ''
-    }));
-
-    return res.json({ success: true, messages: formatted });
+    return res.json({ success: true, messages });
   } catch (error) {
-    console.error('Get messages error:', error);
-    res.status(500).json({ success: false, message: 'Unable to fetch messages' });
+    console.error('Fetch messages error:', error);
+    return res.status(500).json({ success: false, message: 'Error fetching messages.' });
   }
 });
 
 app.get('/edit_profile', authenticateToken, async (req, res) => {
-  try {
-    const user = await User.findById(req.user._id).lean();
-    if (!user) return res.status(404).render('auth/login', { error: 'User not found' });
-    res.render('pages/edit_profile', { user });
-  } catch (error) {
-    res.status(500).render('auth/login', { error: 'Error loading profile' });
+  const user = await User.findById(req.user._id).lean();
+  if (!user) {
+    return res.redirect('/profile');
   }
+  res.render('pages/edit_profile', { user, error: null });
 });
 
-app.post('/edit_profile', authenticateToken, profileUpload.single('profileImage'), async (req, res) => {
-  try {
-    const { username, bio } = req.body;
-    const user = await User.findById(req.user._id);
-    
-    if (!user) return res.render('pages/edit_profile', { user: req.user, error: 'User not found' });
-    
-    if (username && username.length >= 3) user.username = username;
-    if (bio !== undefined) user.bio = bio;
-    
-    // Handle profile picture upload
-    if (req.file) {
-      user.profile_picture = '/images/profile_pictures/' + req.file.filename;
-    }
-    
-    await user.save();
-    // Redirect to profile page after successful update
-    res.redirect('/profile');
-  } catch (error) {
-    res.render('pages/edit_profile', { user: req.user, error: 'Error updating profile: ' + error.message });
-  }
-});
-
-// Logout Route
-app.get('/logout', (req, res) => {
-  res.clearCookie('token');
-  res.redirect('/');
-});
-
-// Friend Management Routes
 app.post('/add-friend', authenticateToken, async (req, res) => {
   try {
     const { userId } = req.body;
-    if (!userId) return res.status(400).json({ success: false, message: 'User ID required' });
+    if (!userId) return res.status(400).json({ success: false, message: 'User ID is required' });
     if (userId === req.user._id.toString()) {
-      return res.status(400).json({ success: false, message: 'Cannot add yourself as friend' });
+      return res.status(400).json({ success: false, message: 'You cannot add yourself' });
     }
-    
-    const currentUser = await User.findById(req.user._id);
+
     const targetUser = await User.findById(userId);
-    
     if (!targetUser) return res.status(404).json({ success: false, message: 'User not found' });
-    
-    // Check if already friends
-    if (currentUser.friends.some(id => id.toString() === userId)) {
-      return res.status(400).json({ success: false, message: 'Already friends' });
+
+    if (req.user.friends.some(id => id.toString() === userId)) {
+      return res.status(400).json({ success: false, message: 'You are already friends' });
     }
-    
-    // Check if request already sent
-    if (currentUser.friend_requests_sent.some(id => id.toString() === userId)) {
-      return res.status(400).json({ success: false, message: 'Request already sent' });
+
+    if (req.user.friend_requests_sent.some(id => id.toString() === userId)) {
+      return res.status(400).json({ success: false, message: 'Friend request already sent' });
     }
-    
-    currentUser.friend_requests_sent.push(userId);
+
+    if (req.user.friend_requests.some(id => id.toString() === userId)) {
+      return res.status(400).json({ success: false, message: 'This user has already sent you a friend request' });
+    }
+
+    req.user.friend_requests_sent.push(targetUser._id);
     targetUser.friend_requests.push(req.user._id);
-    
-    await currentUser.save();
+
+    await req.user.save();
     await targetUser.save();
-    
+
     res.json({ success: true, message: 'Friend request sent' });
   } catch (error) {
     console.error('Add friend error:', error);
-    res.status(500).json({ success: false, message: 'Error sending request' });
+    res.status(500).json({ success: false, message: 'Unable to send friend request' });
+  }
+});
+
+app.post('/cancel-friend-request', authenticateToken, async (req, res) => {
+  try {
+    const { userId } = req.body;
+    if (!userId) return res.status(400).json({ success: false, message: 'User ID is required' });
+
+    const targetUser = await User.findById(userId);
+    if (!targetUser) return res.status(404).json({ success: false, message: 'User not found' });
+
+    req.user.friend_requests_sent = req.user.friend_requests_sent.filter(id => id.toString() !== userId);
+    targetUser.friend_requests = targetUser.friend_requests.filter(id => id.toString() !== req.user._id.toString());
+
+    await req.user.save();
+    await targetUser.save();
+
+    res.json({ success: true, message: 'Friend request cancelled' });
+  } catch (error) {
+    console.error('Cancel friend request error:', error);
+    res.status(500).json({ success: false, message: 'Unable to cancel friend request' });
   }
 });
 
 app.post('/accept-friend', authenticateToken, async (req, res) => {
   try {
     const { userId } = req.body;
-    if (!userId) return res.status(400).json({ success: false, message: 'User ID required' });
-    
-    const currentUser = await User.findById(req.user._id);
-    const requesterUser = await User.findById(userId);
-    
-    if (!requesterUser) return res.status(404).json({ success: false, message: 'User not found' });
-    
-    // Remove from friend requests and add to friends
-    currentUser.friend_requests = currentUser.friend_requests.filter(id => id.toString() !== userId);
-    requesterUser.friend_requests_sent = requesterUser.friend_requests_sent.filter(id => id.toString() !== req.user._id.toString());
-    
-    if (!currentUser.friends.some(id => id.toString() === userId)) {
-      currentUser.friends.push(userId);
+    if (!userId) return res.status(400).json({ success: false, message: 'User ID is required' });
+
+    const requester = await User.findById(userId);
+    if (!requester) return res.status(404).json({ success: false, message: 'User not found' });
+
+    if (!req.user.friend_requests.some(id => id.toString() === userId)) {
+      return res.status(400).json({ success: false, message: 'No friend request from this user' });
     }
-    if (!requesterUser.friends.some(id => id.toString() === req.user._id.toString())) {
-      requesterUser.friends.push(req.user._id);
+
+    req.user.friend_requests = req.user.friend_requests.filter(id => id.toString() !== userId);
+    requester.friend_requests_sent = requester.friend_requests_sent.filter(id => id.toString() !== req.user._id.toString());
+
+    if (!req.user.friends.some(id => id.toString() === userId)) {
+      req.user.friends.push(requester._id);
     }
-    
-    await currentUser.save();
-    await requesterUser.save();
-    
+    if (!requester.friends.some(id => id.toString() === req.user._id.toString())) {
+      requester.friends.push(req.user._id);
+    }
+
+    await req.user.save();
+    await requester.save();
+
     res.json({ success: true, message: 'Friend request accepted' });
   } catch (error) {
     console.error('Accept friend error:', error);
-    res.status(500).json({ success: false, message: 'Error accepting request' });
+    res.status(500).json({ success: false, message: 'Unable to accept friend request' });
   }
 });
 
 app.post('/reject-friend', authenticateToken, async (req, res) => {
   try {
     const { userId } = req.body;
-    if (!userId) return res.status(400).json({ success: false, message: 'User ID required' });
-    
-    const currentUser = await User.findById(req.user._id);
-    const requesterUser = await User.findById(userId);
-    
-    if (!requesterUser) return res.status(404).json({ success: false, message: 'User not found' });
-    
-    // Remove from friend requests
-    currentUser.friend_requests = currentUser.friend_requests.filter(id => id.toString() !== userId);
-    requesterUser.friend_requests_sent = requesterUser.friend_requests_sent.filter(id => id.toString() !== req.user._id.toString());
-    
-    await currentUser.save();
-    await requesterUser.save();
-    
+    if (!userId) return res.status(400).json({ success: false, message: 'User ID is required' });
+
+    const requester = await User.findById(userId);
+    if (!requester) return res.status(404).json({ success: false, message: 'User not found' });
+
+    req.user.friend_requests = req.user.friend_requests.filter(id => id.toString() !== userId);
+    requester.friend_requests_sent = requester.friend_requests_sent.filter(id => id.toString() !== req.user._id.toString());
+
+    await req.user.save();
+    await requester.save();
+
     res.json({ success: true, message: 'Friend request rejected' });
   } catch (error) {
     console.error('Reject friend error:', error);
-    res.status(500).json({ success: false, message: 'Error rejecting request' });
+    res.status(500).json({ success: false, message: 'Unable to reject friend request' });
   }
 });
 
+// EDIT PROFILE POST ROUTE
+app.post('/edit_profile', authenticateToken, (req, res, next) => {
+  // 1. Handle Multer errors gracefully so the app doesn't crash
+  profileUpload.single('profileImage')(req, res, function (err) {
+    if (err) {
+      return res.render('pages/edit_profile', { user: req.user, error: err.message });
+    }
+    next();
+  });
+}, async (req, res) => {
+  try {
+    const { username, email, bio, password, confirm_password } = req.body;
+    const user = await User.findById(req.user._id);
+    
+    if (!user) return res.render('pages/edit_profile', { user: req.user, error: 'User not found' });
+    
+    // 2. Safely check if the new username is already taken by someone else
+    if (username && username.trim() !== user.username) {
+      const existingUser = await User.findOne({ username: new RegExp('^' + username.trim() + '$', 'i') });
+      if (existingUser) {
+        return res.render('pages/edit_profile', { user, error: 'That username is already taken. Please choose another.' });
+      }
+      user.username = username.trim();
+    }
+
+    // 3. Safely update email
+    if (email && email.trim().toLowerCase() !== user.email) {
+      const existingEmailUser = await User.findOne({ email: email.trim().toLowerCase() });
+      if (existingEmailUser) {
+        return res.render('pages/edit_profile', { user, error: 'Email is already in use by another account.' });
+      }
+      user.email = email.trim().toLowerCase();
+    }
+    
+    // 4. Update bio safely
+    if (bio !== undefined) user.bio = bio.trim();
+
+    // 5. Update password only when provided and confirmed
+    if (password) {
+      if (password.length < 6) {
+        return res.render('pages/edit_profile', { user, error: 'Password must be at least 6 characters long.' });
+      }
+      if (password !== confirm_password) {
+        return res.render('pages/edit_profile', { user, error: 'Passwords do not match.' });
+      }
+      user.password = password;
+    }
+    
+    // 6. Update profile picture if a new valid image was uploaded
+    if (req.file) {
+      user.profile_picture = '/images/profile_pictures/' + req.file.filename;
+    }
+    
+    await user.save();
+    res.redirect('/profile'); // Send them back to their profile to see the changes!
+  } catch (error) {
+    console.error("Profile Edit Error: ", error);
+    res.render('pages/edit_profile', { user: req.user, error: 'Error updating profile. Please try again.' });
+  }
+});
 // 4. SOCKET.IO LOGIC
-const userSockets = new Map(); // userId -> Set(socketIds)
-
-function broadcastUserStatus(userId, status) {
-  io.emit('user_status_change', { userId, status });
-}
-
-app.get('/online-users', (req, res) => {
-  try {
-    const users = Array.from(userSockets.keys());
-    res.json({ success: true, users });
-  } catch (err) {
-    console.error('Online users error:', err);
-    res.status(500).json({ success: false, message: 'Unable to fetch online users' });
-  }
-});
-
-app.get('/online-status', (req, res) => {
-  try {
-    const onlineUserIds = Array.from(userSockets.keys());
-    res.json({ success: true, onlineUserIds });
-  } catch (err) {
-    console.error('Online status error:', err);
-    res.status(500).json({ success: false, message: 'Unable to get online status' });
-  }
-});
+const userSockets = new Map();
 
 io.on('connection', (socket) => {
+  const cookieHeader = socket.handshake.headers.cookie;
+  if (!cookieHeader) return socket.disconnect();
+  
+  let token = null;
+  cookieHeader.split(';').forEach(cookie => {
+    const [name, value] = cookie.trim().split('=');
+    if (name === 'token') token = value;
+  });
+  
+  if (!token) return socket.disconnect();
+
   try {
-    const cookieHeader = socket.handshake.headers.cookie;
-    if (!cookieHeader) return socket.disconnect();
+    const decoded = jwt.verify(token, process.env.JWTSECRET);
+    const userId = decoded.id;
+    socket.userId = userId;
+    socket.join(`private:${userId}`);
     
-    // Safely extract token from cookies
-    let token = null;
-    const cookies = cookieHeader.split(';');
-    for (const cookie of cookies) {
-      const [name, value] = cookie.trim().split('=');
-      if (name === 'token') {
-        token = value;
-        break;
+    if(!userSockets.has(userId)) userSockets.set(userId, new Set());
+    userSockets.get(userId).add(socket.id);
+    io.emit('user_status_change', { userId, status: 'online' });
+
+    socket.on('join', ({ groupId }) => {
+      if (groupId) {
+        socket.join(`group:${groupId}`);
       }
-    }
-    
-    if (!token) return socket.disconnect();
+    });
 
-    try {
-      const decoded = jwt.verify(token, JWTSECRET);
-      const userId = decoded.id;
-      socket.userId = userId;
-      
-      const isNewOnline = !userSockets.has(userId);
-      if(!userSockets.has(userId)) userSockets.set(userId, new Set());
-      userSockets.get(userId).add(socket.id);
-      if (isNewOnline) {
-        broadcastUserStatus(userId, 'online');
+    socket.on('send_message', async ({ to, content, fileAttachment, isGroup }) => {
+      try {
+        if (!to) return;
+        const trimmedContent = typeof content === 'string' ? content.trim() : '';
+        const messageContent = trimmedContent || (fileAttachment ? '(attachment)' : '');
+        if (!messageContent && !fileAttachment) return;
+
+        if (isGroup) {
+          const group = await Group.findById(to);
+          if (!group) return;
+          if (!group.members.map(String).includes(userId.toString())) return;
+
+          group.messages.push({ sender: userId, content: messageContent, file: fileAttachment || null });
+          await group.save();
+          const newMessage = group.messages[group.messages.length - 1];
+          await Group.populate(newMessage, { path: 'sender', select: 'username profile_picture' });
+
+          io.to(`group:${to}`).emit('group_message', {
+            groupId: to,
+            message: newMessage
+          });
+          return;
+        }
+
+        const sender = await User.findById(userId).select('username profile_picture');
+        const recipient = await User.findById(to).select('username profile_picture');
+        if (!recipient) return;
+
+        const savedMessage = await Message.create({
+          from: userId,
+          to,
+          content: messageContent,
+          file: fileAttachment || null
+        });
+
+        const msgPayload = {
+          _id: savedMessage._id,
+          from: savedMessage.from.toString(),
+          to: savedMessage.to.toString(),
+          content: savedMessage.content,
+          file: savedMessage.file,
+          createdAt: savedMessage.createdAt,
+          senderName: sender.username,
+          senderProfilePicture: sender.profile_picture
+        };
+
+        socket.emit('message', msgPayload);
+        socket.emit('new_message', msgPayload);
+        io.to(`private:${to}`).emit('message', msgPayload);
+        io.to(`private:${to}`).emit('new_message', msgPayload);
+      } catch (err) {
+        console.error('Error handling send_message:', err);
       }
+    });
 
-      socket.on('join', ({ otherUserId, groupId }) => {
-        if (groupId) socket.join(`group:${groupId}`);
-        else if (otherUserId) {
-          const room = [userId, otherUserId].sort().join('_');
-          socket.join(room);
+    socket.on('disconnect', () => {
+      const userSet = userSockets.get(userId);
+      if (userSet) {
+        userSet.delete(socket.id);
+        if (userSet.size === 0) {
+          userSockets.delete(userId);
+          io.emit('user_status_change', { userId, status: 'offline' });
         }
-      });
-
-      socket.on('send_message', async (payload) => {
-        try {
-          const { to, content, isGroup, fileAttachment } = payload;
-          
-          // Validate payload
-          if (!to || !content) {
-            return socket.emit('error', { message: 'Missing required fields' });
-          }
-          
-          if (isGroup) {
-            const group = await Group.findById(to);
-            if (!group) return socket.emit('error', { message: 'Group not found' });
-            
-            const msgObj = { sender: userId, content, file: fileAttachment };
-            group.messages.push(msgObj);
-            await group.save();
-            io.to(`group:${to}`).emit('group_message', { groupId: to, message: msgObj });
-          } else {
-            // Validate recipient exists
-            const recipient = await User.findById(to);
-            if (!recipient) return socket.emit('error', { message: 'User not found' });
-            
-            const msg = new Message({ from: userId, to, content, file: fileAttachment });
-            await msg.save();
-            const room = [userId, to].sort().join('_');
-            io.to(room).emit('new_message', msg);
-          }
-        } catch (err) {
-          console.error('Error sending message:', err);
-          socket.emit('error', { message: 'Failed to send message' });
-        }
-      });
-
-      socket.on('disconnect', () => {
-        const userSet = userSockets.get(userId);
-        if (userSet) {
-          userSet.delete(socket.id);
-          if (userSet.size === 0) {
-            userSockets.delete(userId);
-            broadcastUserStatus(userId, 'offline');
-          }
-        }
-      });
-    } catch (err) {
-      socket.disconnect();
-    }
+      }
+    });
   } catch (err) {
     socket.disconnect();
-  }
-});
-
-// Status API for UI: online / offline
-app.get('/online-status', (req, res) => {
-  try {
-    const onlineUserIds = Array.from(userSockets.keys());
-    res.json({ success: true, onlineUserIds });
-  } catch (err) {
-    console.error('Online status error:', err);
-    res.status(500).json({ success: false, message: 'Unable to get online status' });
   }
 });
 

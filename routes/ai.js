@@ -29,6 +29,22 @@ function topKeywords(text, limit = 8) {
   return Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0, limit).map(x=>x[0]);
 }
 
+function createOpenAIClient() {
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error('OPENAI_API_KEY not set');
+  }
+  const OpenAI = require('openai');
+  return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+}
+
+function getOpenAIModel() {
+  return process.env.OPENAI_MODEL || 'gpt-3.5-turbo';
+}
+
+function getChatSystemPrompt() {
+  return 'You are a helpful assistant. Keep answers concise, friendly, and correct any grammar or clarity issues when asked.';
+}
+
 function simpleSummarizeText(text) {
   if (!text || !text.trim()) return 'No content to summarize.';
   const sentences = text.match(/[^\.\!\?]+[\.\!\?]+|[^\.\!\?]+$/g) || [];
@@ -100,7 +116,6 @@ router.post('/summarize/document', authenticateToken, upload.single('file'), asy
   }
 });
 
-module.exports = router;
 router.post('/chat', authenticateToken, async (req, res) => {
   try {
     const { message } = req.body || {};
@@ -110,38 +125,25 @@ router.post('/chat', authenticateToken, async (req, res) => {
       return res.status(500).json({ success: false, message: 'OPENAI_API_KEY not set on server' });
     }
 
-    // Lazy-load OpenAI
-    let OpenAI;
-    try {
-      const { Configuration, OpenAIApi } = require('openai');
-      const configuration = new Configuration({ apiKey: process.env.OPENAI_API_KEY });
-      OpenAI = new OpenAIApi(configuration);
-    } catch (e) {
-      console.error('OpenAI SDK not available:', e);
-      return res.status(500).json({ success: false, message: 'OpenAI SDK not installed on server' });
-    }
+    const openai = createOpenAIClient();
 
-    // Load or create conversation for user to build context
     let conv = await Conversation.findOne({ user: req.user._id });
     if (!conv) {
       conv = new Conversation({ user: req.user._id, messages: [] });
     }
 
-    // Take last N messages for context
     const CONTEXT_MSGS = 12;
     const recent = conv.messages.slice(-CONTEXT_MSGS).map(m => ({ role: m.role, content: m.content }));
+    const messages = [{ role: 'system', content: getChatSystemPrompt() }, ...recent, { role: 'user', content: message }];
 
-    const messages = [{ role: 'system', content: 'You are a helpful assistant. Keep answers concise and friendly.' }, ...recent, { role: 'user', content: message }];
-
-    // Call OpenAI
-    const resp = await OpenAI.createChatCompletion({
-      model: process.env.OPENAI_MODEL || 'gpt-3.5-turbo',
+    const resp = await openai.chat.completions.create({
+      model: getOpenAIModel(),
       messages,
       max_tokens: 800,
       temperature: 0.7,
     });
 
-    const reply = resp?.data?.choices?.[0]?.message?.content || '';
+    const reply = resp?.choices?.[0]?.message?.content || '';
 
     // Persist user message + assistant reply
     try {
@@ -168,25 +170,21 @@ router.post('/chat/stream', authenticateToken, async (req, res) => {
       return res.status(500).json({ success: false, message: 'OPENAI_API_KEY not set on server' });
     }
 
-    const { Configuration, OpenAIApi } = require('openai');
-    const configuration = new Configuration({ apiKey: process.env.OPENAI_API_KEY });
-    const OpenAI = new OpenAIApi(configuration);
+    const openai = createOpenAIClient();
 
-    // Build context from conversation
     let conv = await Conversation.findOne({ user: req.user._id });
     if (!conv) conv = new Conversation({ user: req.user._id, messages: [] });
     const CONTEXT_MSGS = 12;
     const recent = conv.messages.slice(-CONTEXT_MSGS).map(m => ({ role: m.role, content: m.content }));
-    const messages = [{ role: 'system', content: 'You are a helpful assistant. Keep answers concise and friendly.' }, ...recent, { role: 'user', content: message }];
+    const messages = [{ role: 'system', content: getChatSystemPrompt() }, ...recent, { role: 'user', content: message }];
 
-    // Call OpenAI for full reply (non-streaming), then chunk it to client
-    const apiResp = await OpenAI.createChatCompletion({
-      model: process.env.OPENAI_MODEL || 'gpt-3.5-turbo',
+    const apiResp = await openai.chat.completions.create({
+      model: getOpenAIModel(),
       messages,
       max_tokens: 800,
       temperature: 0.7,
     });
-    const reply = apiResp?.data?.choices?.[0]?.message?.content || '';
+    const reply = apiResp?.choices?.[0]?.message?.content || '';
 
     // Persist
     try {
@@ -252,21 +250,12 @@ router.post('/summarize/chat-ai', authenticateToken, async (req, res) => {
     const MAX_CHARS = 16000;
     if (text.length > MAX_CHARS) text = text.slice(-MAX_CHARS);
 
-    // Lazy-load OpenAI
-    let OpenAI;
-    try {
-      const { Configuration, OpenAIApi } = require('openai');
-      const configuration = new Configuration({ apiKey: process.env.OPENAI_API_KEY });
-      OpenAI = new OpenAIApi(configuration);
-    } catch (e) {
-      console.error('OpenAI SDK not available:', e);
-      return res.status(500).json({ success:false, message:'OpenAI SDK not installed' });
-    }
+    const openai = createOpenAIClient();
 
     const system = 'You are an assistant that summarizes chat conversations. Produce: 1) A short TL;DR (1-2 sentences). 2) Key points (bullet list). 3) Action items or follow-ups (bullet list). Keep it concise.';
 
-    const resp = await OpenAI.createChatCompletion({
-      model: process.env.OPENAI_MODEL || 'gpt-3.5-turbo',
+    const resp = await openai.chat.completions.create({
+      model: getOpenAIModel(),
       messages: [
         { role: 'system', content: system },
         { role: 'user', content: `Summarize the following conversation for me:\n\n${text}` }
@@ -275,10 +264,36 @@ router.post('/summarize/chat-ai', authenticateToken, async (req, res) => {
       temperature: 0.3,
     });
 
-    const summary = resp?.data?.choices?.[0]?.message?.content || '';
+    const summary = resp?.choices?.[0]?.message?.content || '';
     return res.json({ success:true, summary });
   } catch (err) {
     console.error('Error summarizing chat via OpenAI:', err);
+    return res.status(500).json({ success:false, message:'Error contacting OpenAI' });
+  }
+});
+
+router.post('/correct', authenticateToken, async (req, res) => {
+  try {
+    const { text } = req.body || {};
+    if (!text || !text.trim()) return res.status(400).json({ success: false, message: 'Text is required' });
+
+    const openai = createOpenAIClient();
+    const prompt = `Edit and correct the following message for clarity, grammar, and tone while preserving the original meaning. Return only the corrected message without additional commentary:\n\n${text}`;
+
+    const resp = await openai.chat.completions.create({
+      model: getOpenAIModel(),
+      messages: [
+        { role: 'system', content: 'You are a helpful message editor that improves grammar, spelling, clarity, and tone.' },
+        { role: 'user', content: prompt }
+      ],
+      max_tokens: 250,
+      temperature: 0.2,
+    });
+
+    const corrected = resp?.choices?.[0]?.message?.content?.trim() || '';
+    return res.json({ success: true, corrected });
+  } catch (err) {
+    console.error('Error correcting text via OpenAI:', err);
     return res.status(500).json({ success:false, message:'Error contacting OpenAI' });
   }
 });

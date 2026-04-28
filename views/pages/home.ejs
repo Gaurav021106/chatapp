@@ -347,6 +347,10 @@
                   </svg>
                 </button>
               </div>
+              <button id="polishBtn" type="button"
+                class="bg-white/90 text-gray-700 px-4 py-2 rounded-xl hover:bg-white transition-colors shadow-md text-sm">
+                Polish
+              </button>
             </div>
             <!-- File input (hidden) -->
             <input type="file" id="fileInput" class="hidden" />
@@ -439,7 +443,7 @@
             </div>
 
             <div class="flex-1 relative">
-              <input id="chatbotInput" type="text" placeholder="Ask me anything..."
+              <input id="chatbotInput" type="text" placeholder="Ask me to write or polish a professional message..."
                 class="w-full bg-white/10 p-3 pr-12 rounded-xl outline-none text-white placeholder-gray-400 shadow-inner focus:ring-2 focus:ring-blue-400/50 transition-all" />
               <button id="chatbotSendBtn"
                 class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-blue-500 flex items-center justify-center p-2 rounded-lg hover:bg-blue-600 transition-colors shadow-md">
@@ -449,6 +453,7 @@
                 </svg>
               </button>
             </div>
+            <p class="text-xs text-blue-200 mt-2">Use the assistant to draft or polish a message, then click the button below to insert it into chat.</p>
           </div>
         </div>
       </div>
@@ -668,14 +673,34 @@
           if (indicator) indicator.remove();
         };
 
-        function addChatbotMessage(message, isUser = false) {
+        function addChatbotMessage(message, isUser = false, allowUseInChat = false) {
           const msgDiv = document.createElement('div');
           msgDiv.className = isUser
             ? 'self-end bg-blue-500 text-white p-3 px-4 rounded-2xl max-w-[75%] shadow-md'
             : 'self-start bg-white/10 text-white p-3 px-4 rounded-2xl max-w-[75%] backdrop-blur-sm shadow-md';
-          msgDiv.innerHTML = `<p class="whitespace-pre-line">${message}</p>`;
+          const textEl = document.createElement('p');
+          textEl.className = 'whitespace-pre-line';
+          textEl.textContent = message;
+          msgDiv.appendChild(textEl);
+
+          if (!isUser && allowUseInChat) {
+            const actionBtn = document.createElement('button');
+            actionBtn.type = 'button';
+            actionBtn.className = 'mt-3 text-xs text-blue-100 underline hover:text-white';
+            actionBtn.textContent = 'Use in chat';
+            actionBtn.addEventListener('click', () => {
+              const input = document.getElementById('messageInput');
+              if (input) {
+                input.value = message;
+                input.focus();
+              }
+            });
+            msgDiv.appendChild(actionBtn);
+          }
+
           chatbotMessages.appendChild(msgDiv);
           chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+          return { msgDiv, textEl };
         }
 
         // Document summarization handling (chatbot controls)
@@ -747,10 +772,11 @@
           addChatbotMessage(message, true);
           chatbotInput.value = '';
 
-          // Show typing indicator
+          // Show typing indicator and create a single assistant bubble for the response
           showTypingIndicator();
+          const assistantResponse = addChatbotMessage('', false, false);
+          let responseText = '';
 
-          // Try server-side streaming chat endpoint
           try {
             const resp = await fetch('/api/chat/stream', {
               method: 'POST',
@@ -770,28 +796,45 @@
               if (done) break;
               buffer += decoder.decode(value, { stream: true });
               const lines = buffer.split('\n');
-              // Keep last partial line in buffer
               buffer = lines.pop();
               for (const line of lines) {
                 if (!line.trim()) continue;
                 try {
                   const obj = JSON.parse(line);
-                  if (obj.chunk) addChatbotMessage(obj.chunk, false);
-                  if (obj.done) {
-                    // finished
+                  if (obj.chunk) {
+                    responseText += obj.chunk;
+                    assistantResponse.textEl.textContent = responseText;
+                    chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
                   }
                 } catch (e) {
                   // ignore parse errors
                 }
               }
             }
-            // Process any final buffer
             if (buffer && buffer.trim()) {
               try {
                 const obj = JSON.parse(buffer.trim());
-                if (obj.chunk) addChatbotMessage(obj.chunk, false);
+                if (obj.chunk) {
+                  responseText += obj.chunk;
+                  assistantResponse.textEl.textContent = responseText;
+                }
               } catch (e) {}
             }
+
+            // Add a button to use the assistant's response in the chat input.
+            const useButton = document.createElement('button');
+            useButton.type = 'button';
+            useButton.className = 'mt-3 text-xs text-blue-100 underline hover:text-white';
+            useButton.textContent = 'Use in chat';
+            useButton.addEventListener('click', () => {
+              const input = document.getElementById('messageInput');
+              if (input) {
+                input.value = responseText;
+                input.focus();
+              }
+            });
+            assistantResponse.msgDiv.appendChild(useButton);
+
             removeTypingIndicator();
           } catch (err) {
             console.error('Chat stream error', err);
@@ -1020,12 +1063,30 @@
 
       // Receive new messages
       socket.on('new_message', (msg) => {
-        // Only render if it's part of current open chat
         const participants = [msg.from.toString(), msg.to.toString()];
-        if (!currentChatUserId) return;
-        if (participants.includes(currentChatUserId) && participants.includes('<%= user._id %>')) {
+        if (!participants.includes('<%= user._id %>')) return;
+
+        const isIncoming = msg.to.toString() === '<%= user._id %>';
+        const otherUserId = isIncoming ? msg.from.toString() : msg.to.toString();
+
+        // Update unread badge for incoming messages
+        if (isIncoming) {
+          const friendEntry = document.querySelector(`.friend-entry[data-user-id="${otherUserId}"]`);
+          if (friendEntry) {
+            let badgeEl = friendEntry.querySelector('.unread-badge');
+            if (!badgeEl) {
+              badgeEl = document.createElement('div');
+              badgeEl.className = 'unread-badge rounded-full w-8 h-8 bg-blue-500 text-white flex items-center justify-center ml-2 text-sm font-semibold';
+              friendEntry.appendChild(badgeEl);
+            }
+            const currentCount = parseInt(badgeEl.textContent || '0');
+            badgeEl.textContent = currentCount + 1;
+          }
+        }
+
+        // Render message if the chat with this user is currently open
+        if (currentChatUserId && currentChatUserId === otherUserId) {
           const container = document.getElementById('messagesInner');
-          // Remove placeholder if present
           if (container.children.length === 1 && container.children[0].textContent.includes('No messages')) container.innerHTML = '';
           const isMine = msg.from.toString() === '<%= user._id %>';
           container.appendChild(createMessageElement(msg.content, msg.file, isMine));
@@ -1099,29 +1160,6 @@
       // Initialize by fetching groups
       fetchAndDisplayGroups();
 
-      // Handle incoming messages
-      socket.on('message', (data) => {
-        const container = document.getElementById('messagesInner');
-        const isMine = data.from === '<%= user._id %>';
-        container.appendChild(createMessageElement(data.content, data.file, isMine, data.senderName || 'User'));
-
-        // Scroll to bottom
-        const messagesContainer = document.getElementById('messagesContainer');
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
-      });
-
-      // Handle group messages
-      socket.on('groupMessage', (data) => {
-        const container = document.getElementById('messagesInner');
-        const isMine = data.sender._id === '<%= user._id %>';
-        // data may contain file metadata under data.message.file or data.file
-        const fileMeta = data.message && data.message.file ? data.message.file : data.file;
-        container.appendChild(createMessageElement(data.content || data.message?.content, fileMeta, isMine, data.sender.username));
-
-        // Scroll to bottom
-        const messagesContainer = document.getElementById('messagesContainer');
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
-      });
 
       // Toggle dropdown menu
       menuBtn.addEventListener('click', (e) => {
@@ -1238,6 +1276,35 @@
         document.getElementById('fileName').textContent = file.name;
         document.getElementById('filePreview').classList.remove('hidden');
       });
+
+      const polishBtn = document.getElementById('polishBtn');
+      if (polishBtn) {
+        polishBtn.addEventListener('click', async () => {
+          const input = document.getElementById('messageInput');
+          const text = input.value.trim();
+          if (!text) {
+            return alert('Type a message first to polish it.');
+          }
+
+          try {
+            const resp = await fetch('/api/correct', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ text })
+            });
+            const json = await resp.json();
+            if (json.success && json.corrected) {
+              input.value = json.corrected;
+              input.focus();
+            } else {
+              alert(json.message || 'Could not polish the message.');
+            }
+          } catch (error) {
+            console.error('Error polishing message:', error);
+            alert('Error polishing message. Please try again.');
+          }
+        });
+      }
 
       document.getElementById('removeFile').addEventListener('click', () => {
         currentFile = null;
