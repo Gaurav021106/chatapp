@@ -37,11 +37,11 @@
   </div>
 
   <!-- Main Chat Section -->
-  <div id="chatSection" class="w-full h-[88vh] flex items-stretch gap-3 mt-2">
+  <div id="chatSection" class="w-full h-[88vh] flex flex-col md:flex-row items-stretch gap-3 mt-2">
 
     <!-- Left Sidebar: Friends List (Fixed width) -->
     <aside
-      class="bg-gradient-to-b from-[#7D98A1] to-[#8DA9B2] w-[270px] h-full rounded-3xl flex flex-col p-4 flex-shrink-0 shadow-xl">
+      class="bg-gradient-to-b from-[#7D98A1] to-[#8DA9B2] w-[150px] sm:w-[200px] md:w-[270px] h-full rounded-3xl flex flex-col p-4 flex-shrink-0 shadow-xl">
       <div class="flex gap-2">
         <div class="relative flex-grow">
           <input type="text" placeholder="Search friends..."
@@ -125,7 +125,7 @@
                 <!-- Group Name -->
                 <div>
                   <label for="groupName" class="block text-sm font-medium text-gray-700">Group Name</label>
-                  <input type="text" id="groupName" name="groupName" required
+                  <input type="text" id="groupName" name="name" required
                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                 </div>
 
@@ -133,7 +133,7 @@
                 <div>
                   <label for="groupDescription" class="block text-sm font-medium text-gray-700">Description
                     (Optional)</label>
-                  <textarea id="groupDescription" name="groupDescription" rows="3"
+                  <textarea id="groupDescription" name="description" rows="3"
                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"></textarea>
                 </div>
 
@@ -406,7 +406,7 @@
 
     <!-- Chatbot Section (hidden initially) -->
     <aside id="chatbotSection"
-      class="bg-gradient-to-br from-[#2C3531] to-[#3B444B] w-[270px] h-full rounded-3xl flex-col hidden flex-shrink-0 shadow-xl">
+      class="hidden md:flex bg-gradient-to-br from-[#2C3531] to-[#3B444B] w-[150px] sm:w-[200px] md:w-[270px] h-full rounded-3xl flex-col flex-shrink-0 shadow-xl">
       <!-- Chatbot Header -->
       <div
         class="h-[8vh] w-full bg-white/5 backdrop-blur-md rounded-t-3xl flex items-center gap-3 p-4 border-b border-white/10">
@@ -1058,6 +1058,13 @@
           // Scroll to bottom
           const messagesContainer = document.getElementById('messagesContainer');
           messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+          // Clear unread badge for this friend
+          const friendEntry = document.querySelector(`.friend-entry[data-user-id="${otherId}"]`);
+          if (friendEntry) {
+            const badgeEl = friendEntry.querySelector('.unread-badge');
+            if (badgeEl) badgeEl.remove();
+          }
         });
       });
 
@@ -1443,77 +1450,8 @@
         return msgEl;
       }
 
-      // Handle group creation form submission
-      groupForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-
-        const formData = {
-          name: document.getElementById('groupName').value,
-          description: document.getElementById('groupDescription').value,
-          members: Array.from(document.querySelectorAll('input[name="members[]"]:checked')).map(cb => cb.value)
-        };
-
-        if (!formData.members.length) {
-          alert('Please select at least one member for the group');
-          return;
-        }
-
-        try {
-          const response = await fetch('/groups/create', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(formData)
-          });
-
-          const data = await response.json();
-
-          if (data.success) {
-            // Close modal
-            createGroupModal.classList.add('hidden');
-
-            // Reset form
-            groupForm.reset();
-
-            // Add the new group to the list
-            const groupEl = document.createElement('div');
-            groupEl.className = 'friend-entry flex items-center gap-3 p-3 bg-[#A9B4C2] hover:bg-gray-100 rounded-3xl transition duration-200 cursor-pointer';
-            groupEl.setAttribute('data-group-id', data.group._id);
-
-            groupEl.innerHTML = `
-            <div class="relative">
-              <div class="w-10 h-10 bg-white rounded-full overflow-hidden flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
-                </svg>
-              </div>
-            </div>
-            <div class="flex flex-col flex-1 min-w-0">
-              <h2 class="font-bold">${data.group.name}</h2>
-              <p class="text-sm text-gray-700 truncate">${data.group.description || 'No description'}</p>
-            </div>
-          `;
-
-            // Add click handler for group chat
-            groupEl.addEventListener('click', () => openGroupChat(data.group));
-
-            // Add to user list before the first friend entry
-            const userList = document.getElementById('userList');
-            const firstFriend = userList.querySelector('.friend-entry');
-            if (firstFriend) {
-              userList.insertBefore(groupEl, firstFriend);
-            } else {
-              userList.appendChild(groupEl);
-            }
-          } else {
-            alert(data.message || 'Error creating group');
-          }
-        } catch (error) {
-          console.error('Error creating group:', error);
-          alert('Error creating group. Please try again.');
-        }
-      });
+      // Group creation is handled by the inline group form script in the modal to support file uploads and multipart form data.
+      // No duplicate submit handler is needed here.
     </script>
     </main>
 
