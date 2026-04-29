@@ -85,6 +85,25 @@
                 </svg>
                 Summarize Chat
               </button>
+              <button id="deleteChatBtn"
+                class="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+                  <path fill-rule="evenodd"
+                    d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
+                    clip-rule="evenodd" />
+                </svg>
+                Delete Chat
+              </button>
+              <button id="selectChatsBtn"
+                class="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd"
+                    d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z"
+                    clip-rule="evenodd" />
+                </svg>
+                Select Chats
+              </button>
             </div>
           </div>
 
@@ -221,6 +240,7 @@
           <% user.friends.forEach(friend=> { %>
             <div data-user-id="<%= friend._id %>"
               class="friend-item friend-entry flex items-center gap-3 p-3 bg-[#A9B4C2] hover:bg-gray-100 rounded-3xl transition duration-200 cursor-pointer">
+              <input type="checkbox" class="friend-checkbox hidden w-4 h-4" data-user-id="<%= friend._id %>" />
               <div class="relative">
                 <div class="w-10 h-10 bg-white rounded-full overflow-hidden">
                   <img src="<%= friend.profile_picture %>" alt="" class="object-cover w-full h-full" />
@@ -853,6 +873,8 @@
     <script>
       const socket = io();
       let currentChatUserId = null;
+      let selectMode = false;
+      let selectedChats = [];
 
       // Handle direct chat from URL parameter
       const urlParams = new URLSearchParams(window.location.search);
@@ -1008,6 +1030,7 @@
       // Click handler for friend entries
       document.querySelectorAll('.friend-entry').forEach(el => {
         el.addEventListener('click', async () => {
+          if (selectMode) return; // Don't open chat in select mode
           const otherId = el.getAttribute('data-user-id');
           currentChatUserId = otherId;
 
@@ -1047,7 +1070,7 @@
           if (data.success && data.messages && data.messages.length) {
             data.messages.forEach(m => {
               const isMine = m.from.toString() === '<%= user._id %>';
-              container.appendChild(createMessageElement(m.content, m.file, isMine));
+              container.appendChild(createMessageElement(m.content, m.file, isMine, null, m._id));
             });
           } else {
             const elEmpty = document.createElement('div');
@@ -1096,7 +1119,7 @@
           const container = document.getElementById('messagesInner');
           if (container.children.length === 1 && container.children[0].textContent.includes('No messages')) container.innerHTML = '';
           const isMine = msg.from.toString() === '<%= user._id %>';
-          container.appendChild(createMessageElement(msg.content, msg.file, isMine));
+          container.appendChild(createMessageElement(msg.content, msg.file, isMine, null, msg._id));
           const messagesContainer = document.getElementById('messagesContainer');
           messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
@@ -1179,6 +1202,280 @@
         dropdownMenu.classList.add('hidden');
       });
 
+      // Delete Chat Button
+      const deleteChatBtn = document.getElementById('deleteChatBtn');
+      if (deleteChatBtn) {
+        deleteChatBtn.addEventListener('click', async () => {
+          if (!currentChatUserId && !currentGroupId) return alert('Select a chat first');
+          if (confirm('Are you sure you want to delete this conversation?')) {
+            try {
+              if (currentGroupId) {
+                alert('Group deletion not implemented yet');
+              } else {
+                const res = await fetch('/delete-conversation', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ userId: currentChatUserId })
+                });
+                const data = await res.json();
+                if (data.success) {
+                  alert('Conversation deleted');
+                  location.reload();
+                } else {
+                  alert(data.message);
+                }
+              }
+            } catch (e) {
+              alert('Error deleting conversation');
+            }
+          }
+          dropdownMenu.classList.add('hidden');
+        });
+      }
+
+      // Select Chats Button
+      const selectChatsBtn = document.getElementById('selectChatsBtn');
+      if (selectChatsBtn) {
+        selectChatsBtn.addEventListener('click', () => {
+          selectMode = !selectMode;
+          if (selectMode) {
+            document.querySelectorAll('.friend-checkbox').forEach(cb => cb.classList.remove('hidden'));
+            dropdownMenu.innerHTML = `
+              <div class="p-2">
+                <button id="deleteSelectedBtn" class="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+                    <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
+                  </svg>
+                  Delete Selected
+                </button>
+                <button id="cancelSelectBtn" class="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                  </svg>
+                  Cancel Select
+                </button>
+              </div>
+            `;
+            document.getElementById('deleteSelectedBtn').addEventListener('click', async () => {
+              if (selectedChats.length === 0) return alert('Select chats to delete');
+              if (confirm(`Delete ${selectedChats.length} conversation(s)?`)) {
+                try {
+                  const res = await fetch('/delete-conversations', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userIds: selectedChats })
+                  });
+                  const data = await res.json();
+                  if (data.success) {
+                    alert('Conversations deleted');
+                    location.reload();
+                  } else {
+                    alert(data.message);
+                  }
+                } catch (e) {
+                  alert('Error deleting conversations');
+                }
+              }
+              dropdownMenu.classList.add('hidden');
+            });
+            document.getElementById('cancelSelectBtn').addEventListener('click', () => {
+              selectMode = false;
+              selectedChats = [];
+              document.querySelectorAll('.friend-checkbox').forEach(cb => {
+                cb.classList.add('hidden');
+                cb.checked = false;
+              });
+              dropdownMenu.innerHTML = `
+                <div class="p-2">
+                  <button id="createGroupBtn" class="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
+                    </svg>
+                    Create Group
+                  </button>
+                  <button id="summarizeChatBtn" class="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+                      <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd" />
+                    </svg>
+                    Summarize Chat
+                  </button>
+                  <button id="deleteChatBtn" class="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+                      <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
+                    </svg>
+                    Delete Chat
+                  </button>
+                  <button id="selectChatsBtn" class="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clip-rule="evenodd" />
+                    </svg>
+                    Select Chats
+                  </button>
+                </div>
+              `;
+              // Re-add listeners
+              const newCreateGroupBtn = document.getElementById('createGroupBtn');
+              if (newCreateGroupBtn) {
+                newCreateGroupBtn.addEventListener('click', () => {
+                  createGroupModal.classList.remove('hidden');
+                  dropdownMenu.classList.add('hidden');
+                });
+              }
+              const newSummarizeChatBtn = document.getElementById('summarizeChatBtn');
+              if (newSummarizeChatBtn) {
+                newSummarizeChatBtn.addEventListener('click', async () => {
+                  const chatName = prompt("Enter the chat (friend or group) name to summarize:");
+                  if (!chatName) return;
+                  let chatId = null, type = null;
+                  const groupEl = Array.from(document.querySelectorAll('.friend-entry[data-group-id]')).find(el =>
+                    el.querySelector('h2') && el.querySelector('h2').textContent.trim().toLowerCase() === chatName.trim().toLowerCase()
+                  );
+                  if (groupEl) {
+                    chatId = groupEl.getAttribute('data-group-id');
+                    type = 'group';
+                  } else {
+                    const friendEl = Array.from(document.querySelectorAll('.friend-entry[data-user-id]')).find(el =>
+                      el.querySelector('p.font-bold') && el.querySelector('p.font-bold').textContent.trim().toLowerCase() === chatName.trim().toLowerCase()
+                    );
+                    if (friendEl) {
+                      chatId = friendEl.getAttribute('data-user-id');
+                      type = 'friend';
+                    }
+                  }
+                  if (!chatId || !type) {
+                    alert("Chat not found!");
+                    return;
+                  }
+                  let messages = [];
+                  try {
+                    let res;
+                    if (type === 'group') {
+                      res = await fetch(`/groups/${chatId}/messages`);
+                      let data = await res.json();
+                      if (data.success) messages = data.messages.map(m => `${m.sender.username}: ${m.content}`);
+                    } else {
+                      res = await fetch(`/messages/${chatId}`);
+                      let data = await res.json();
+                      if (data.success) messages = data.messages.map(m => `${m.from_username}: ${m.content}`);
+                    }
+                  } catch (e) {
+                    alert("Could not fetch messages");
+                    return;
+                  }
+                  if (!messages.length) {
+                    alert("No messages in this chat.");
+                    return;
+                  }
+                  chatbotSection.classList.remove('hidden');
+                  chatbotSection.style.display = 'flex';
+                  addChatbotMessage(`Summarizing chat '${chatName}':\nGenerating summary...`, false);
+                  try {
+                    const resp = await fetch('/api/summarize/chat', {
+                      method: 'POST', headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ chatId, type })
+                    });
+                    const json = await resp.json();
+                    if (json.success) {
+                      const parts = json.summary.match(/.{1,140}/g) || [json.summary];
+                      const typing = document.getElementById('typingIndicator');
+                      if (typing) typing.remove();
+                      for (let i=0;i<parts.length;i++){
+                        addChatbotMessage(parts[i], false);
+                        await new Promise(r=>setTimeout(r, 220));
+                      }
+                    } else {
+                      try {
+                        const aiResp = await fetch('/api/summarize/chat-ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chatId, type }) });
+                        const aiJson = await aiResp.json();
+                        if (aiJson.success) {
+                          const parts2 = aiJson.summary.match(/.{1,140}/g) || [aiJson.summary];
+                          for (let p of parts2) { addChatbotMessage(p, false); await new Promise(r=>setTimeout(r,220)); }
+                        } else {
+                          addChatbotMessage('Could not generate summary: ' + (json.message || 'Unknown error'), false);
+                        }
+                      } catch (e) {
+                        addChatbotMessage('Could not generate summary: ' + (json.message || 'Unknown error'), false);
+                      }
+                    }
+                  } catch (err) {
+                    console.error('Summarize error', err);
+                    addChatbotMessage('Error contacting summarization service', false);
+                  }
+                });
+              }
+              const newDeleteChatBtn = document.getElementById('deleteChatBtn');
+              if (newDeleteChatBtn) {
+                newDeleteChatBtn.addEventListener('click', async () => {
+                  if (!currentChatUserId && !currentGroupId) return alert('Select a chat first');
+                  if (confirm('Are you sure you want to delete this conversation?')) {
+                    try {
+                      if (currentGroupId) {
+                        alert('Group deletion not implemented yet');
+                      } else {
+                        const res = await fetch('/delete-conversation', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ userId: currentChatUserId })
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                          alert('Conversation deleted');
+                          location.reload();
+                        } else {
+                          alert(data.message);
+                        }
+                      }
+                    } catch (e) {
+                      alert('Error deleting conversation');
+                    }
+                  }
+                  dropdownMenu.classList.add('hidden');
+                });
+              }
+              const newSelectChatsBtn = document.getElementById('selectChatsBtn');
+              if (newSelectChatsBtn) {
+                newSelectChatsBtn.addEventListener('click', () => {
+                  selectMode = !selectMode;
+                  if (selectMode) {
+                    document.querySelectorAll('.friend-checkbox').forEach(cb => cb.classList.remove('hidden'));
+                    // ... (same as above, but to avoid recursion, perhaps set selectMode = false first)
+                  } else {
+                    document.querySelectorAll('.friend-checkbox').forEach(cb => {
+                      cb.classList.add('hidden');
+                      cb.checked = false;
+                    });
+                    selectedChats = [];
+                  }
+                  dropdownMenu.classList.add('hidden');
+                });
+              }
+            });
+          } else {
+            document.querySelectorAll('.friend-checkbox').forEach(cb => {
+              cb.classList.add('hidden');
+              cb.checked = false;
+            });
+            selectedChats = [];
+          }
+          dropdownMenu.classList.add('hidden');
+        });
+      }
+
+      // Checkbox change for select mode
+      document.addEventListener('change', (e) => {
+        if (e.target.classList.contains('friend-checkbox')) {
+          const userId = e.target.getAttribute('data-user-id');
+          if (e.target.checked) {
+            selectedChats.push(userId);
+          } else {
+            selectedChats = selectedChats.filter(id => id !== userId);
+          }
+        }
+      });
+
       // Open group creation modal
       createGroupBtn.addEventListener('click', () => {
         createGroupModal.classList.remove('hidden');
@@ -1231,7 +1528,7 @@
           if (data.success && data.messages && data.messages.length) {
             data.messages.forEach(m => {
               const isMine = m.sender._id === '<%= user._id %>';
-              container.appendChild(createMessageElement(m.content, m.file, isMine, m.sender.username));
+              container.appendChild(createMessageElement(m.content, m.file, isMine, m.sender.username, m._id));
             });
           } else {
             const elEmpty = document.createElement('div');
@@ -1258,7 +1555,7 @@
           }
 
           const isMine = message.sender._id === '<%= user._id %>';
-          container.appendChild(createMessageElement(message.content, message.file, isMine, message.sender.username));
+          container.appendChild(createMessageElement(message.content, message.file, isMine, message.sender.username, message._id));
 
           const messagesContainer = document.getElementById('messagesContainer');
           messagesContainer.scrollTop = messagesContainer.scrollHeight;
@@ -1430,9 +1727,10 @@
       }
 
       // Create a message element (text + optional attachment)
-      function createMessageElement(content, file, isMine, senderName) {
+      function createMessageElement(content, file, isMine, senderName, msgId) {
         const msgEl = document.createElement('div');
         msgEl.className = isMine ? 'self-end bg-blue-200 p-2 rounded-2xl max-w-xs' : 'self-start bg-white p-2 rounded-2xl max-w-xs';
+        if (msgId) msgEl.setAttribute('data-msg-id', msgId);
         if (senderName) {
           const nameP = document.createElement('p');
           nameP.className = 'text-xs text-gray-600 mb-1';
@@ -1447,6 +1745,40 @@
           const attach = createAttachmentElement(file);
           if (attach) msgEl.appendChild(attach);
         }
+        // Add right-click context menu
+        msgEl.addEventListener('contextmenu', (e) => {
+          e.preventDefault();
+          const menu = document.createElement('div');
+          menu.className = 'absolute bg-white border rounded shadow-lg p-2 z-50';
+          menu.innerHTML = '<button class="delete-msg-btn px-2 py-1 hover:bg-gray-100">Delete Message</button>';
+          menu.style.left = e.pageX + 'px';
+          menu.style.top = e.pageY + 'px';
+          document.body.appendChild(menu);
+          const removeMenu = () => {
+            menu.remove();
+            document.removeEventListener('click', removeMenu);
+          };
+          document.addEventListener('click', removeMenu);
+          menu.querySelector('.delete-msg-btn').addEventListener('click', async () => {
+            if (confirm('Delete this message?')) {
+              try {
+                const res = await fetch('/delete-message', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ messageId: msgId })
+                });
+                const data = await res.json();
+                if (data.success) {
+                  msgEl.remove();
+                } else {
+                  alert(data.message);
+                }
+              } catch (e) {
+                alert('Error deleting message');
+              }
+            }
+          });
+        });
         return msgEl;
       }
 

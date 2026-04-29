@@ -277,16 +277,69 @@ app.post('/reject-friend', authenticateToken, async (req, res) => {
   }
 });
 
-// EDIT PROFILE POST ROUTE
-app.post('/edit_profile', authenticateToken, (req, res, next) => {
-  // 1. Handle Multer errors gracefully so the app doesn't crash
-  profileUpload.single('profileImage')(req, res, function (err) {
-    if (err) {
-      return res.render('pages/edit_profile', { user: req.user, error: err.message });
+app.post('/delete-message', authenticateToken, async (req, res) => {
+  try {
+    const { messageId } = req.body;
+    if (!messageId) return res.status(400).json({ success: false, message: 'Message ID is required' });
+
+    const message = await Message.findById(messageId);
+    if (!message) return res.status(404).json({ success: false, message: 'Message not found' });
+
+    // Check if user is sender or recipient
+    if (message.from.toString() !== req.user._id.toString() && message.to.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ success: false, message: 'You can only delete your own messages' });
     }
-    next();
-  });
-}, async (req, res) => {
+
+    await Message.findByIdAndDelete(messageId);
+    res.json({ success: true, message: 'Message deleted' });
+  } catch (error) {
+    console.error('Delete message error:', error);
+    res.status(500).json({ success: false, message: 'Error deleting message' });
+  }
+});
+
+app.post('/delete-conversation', authenticateToken, async (req, res) => {
+  try {
+    const { userId } = req.body;
+    if (!userId) return res.status(400).json({ success: false, message: 'User ID is required' });
+
+    // Delete all messages between current user and the specified user
+    await Message.deleteMany({
+      $or: [
+        { from: req.user._id, to: userId },
+        { from: userId, to: req.user._id }
+      ]
+    });
+
+    res.json({ success: true, message: 'Conversation deleted' });
+  } catch (error) {
+    console.error('Delete conversation error:', error);
+    res.status(500).json({ success: false, message: 'Error deleting conversation' });
+  }
+});
+
+app.post('/delete-conversations', authenticateToken, async (req, res) => {
+  try {
+    const { userIds } = req.body;
+    if (!userIds || !Array.isArray(userIds)) return res.status(400).json({ success: false, message: 'User IDs array is required' });
+
+    for (const userId of userIds) {
+      await Message.deleteMany({
+        $or: [
+          { from: req.user._id, to: userId },
+          { from: userId, to: req.user._id }
+        ]
+      });
+    }
+
+    res.json({ success: true, message: 'Conversations deleted' });
+  } catch (error) {
+    console.error('Delete conversations error:', error);
+    res.status(500).json({ success: false, message: 'Error deleting conversations' });
+  }
+});
+
+app.post('/edit_profile', authenticateToken, async (req, res) => {
   try {
     const { username, email, bio, password, confirm_password } = req.body;
     const user = await User.findById(req.user._id);
